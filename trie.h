@@ -13,15 +13,17 @@ class trie_node;
 //Hint: Use malloc & realloc!
 class children{
 	int Size;
-	int Current;
-	trie_node **array;
+	int First_Available_Slot;
+	trie_node **Array;
 
-	void move_data();
+	void move_data(int index);
+	void double_storage();
+	bool storage_available(){if(Size==First_Available_Slot){return false;}return true;};
 public:
 	children(int Init_Size);
 	~children();
-	void Insert_Child(trie_node* new_child);
-	trie_node* Search_Child(string keyword);
+	void insert_child(trie_node* new_child);
+	trie_node* search_child(string keyword);
 }
 
 class trie_node {
