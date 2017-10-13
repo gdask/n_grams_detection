@@ -5,7 +5,7 @@
 #include "trie.h"
 
 void tn_init(trie_node* obj){
-    obj->Initialized = true;
+    obj->Initialized = false;
     obj->Leaf = true;
     obj->Word = NULL;
     obj->Children.Initialized = false;
