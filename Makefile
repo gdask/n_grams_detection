@@ -1,7 +1,17 @@
 CC = g++
-PATH = .././test_env
-CFLAGS = -I
-DEPS = trie.h
+OUT = n_gram
+CFLAGS = -Wall -g
 
-%.o: %.c $(DEPS)
+OBJECTS = trie.o main.o
+SOURCES = trie.cpp main.cpp
+HEADERS = trie.h
+
+comp : $(OBJECTS)
+	$(CC) -g $(OBJECTS) -o $(OUT)
+
+%.o: %.cpp $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+
+clean: 
+	rm -f $(OBJECTS) $(OUT)
