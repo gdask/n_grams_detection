@@ -64,6 +64,8 @@ bool tn_is_head(trie_node* obj);
 //Internal query functions
 int	tn_compare(trie_node* obj,char* input_word);
 int	tn_lookup_index(trie_node* obj,char* input_word);
+//Debug purpose printing function
+void tn_print_subtree(trie_node* obj);
 
 
 #endif

@@ -90,11 +90,11 @@ int tn_compare(trie_node* obj,char* input_word){
 }
 
 int tn_lookup_index(trie_node* obj,char* input_word){
-    if(obj->tn_is_leaf==true){
+    if(tn_is_leaf(obj)==true){
         //Leaf has no childern
         return -1;
     }
-    int possible_index = ca_locate(obj->next,input_word);
+    int possible_index = ca_locate_index(&obj->next,input_word);
     if(ca_word_exists(&obj->next,input_word,possible_index)==true){
         //Using ca_ function protect us from possible illegal mem access.
         return possible_index;
@@ -126,7 +126,7 @@ trie_node* tn_insert(trie_node* obj,char* input_word){
         return ca_get_pointer(&obj->next,0);
     }
     //Search in children
-    int possible_index = ca_locate(obj->next,input_word);
+    int possible_index = ca_locate_index(&obj->next,input_word);
     if(ca_word_exists(&obj->next,input_word,possible_index)==true){
         return ca_get_pointer(&obj->next,possible_index);
     }
@@ -136,15 +136,39 @@ trie_node* tn_insert(trie_node* obj,char* input_word){
     }
 }
 
+void tn_print_subtree(trie_node* obj){
+    if(tn_is_leaf(obj)==true){
+        fprintf(stderr,"Leaf trie node on %p with Word= %s\n",obj,obj->Word);
+        return;
+    }
+    else if(tn_is_normal(obj)==true){
+        fprintf(stderr,"Normal trie node on %p with Word= %s\n",obj,obj->Word);
+    }
+    else if(tn_is_head(obj)==true){
+        fprintf(stderr,"Head trie node on %p \n",obj);
+    }
+    else{
+        fprintf(stderr,"tn_print_subtree called on an invalid object\n");
+        exit(-1);
+    }
+    fprintf(stderr,"Size of children_array = %d ,Children ptr = ",obj->next.Size);
+    int i;
+    for(i=0;i<obj->next.First_Available_Slot;i++) fprintf(stderr," %p ",obj->next.Array[i]);
+    fprintf(stderr,"\n");
+
+    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(obj->next.Array[i]);
+}
+
+
 void ca_init(children_arr* obj,int init_size){
     if(init_size==0){
         fprintf(stderr,"children_arr_size called with 0 init_size\n");
         exit(-1);
     }
-    if(obj->Initialized==true){
+    /*if(obj->Initialized==true){
         fprintf(stderr,"children_arr called on an already initialized object\n");
         exit(-1);
-    }
+    }*/
     obj->Array = malloc(init_size*sizeof(trie_node*));
     if(obj->Array==NULL){
         fprintf(stderr,"Malloc Failed\n");
@@ -157,13 +181,13 @@ void ca_init(children_arr* obj,int init_size){
 
 void ca_fin(children_arr* obj){
     if(obj->Initialized == true){
+        fprintf(stderr,"Children_arr fin\n");
         int i;
         for(i=0;i<obj->First_Available_Slot;i++){
             tn_fin(obj->Array[i]);
             free(obj->Array[i]);   
         }
         free(obj->Array);
-        fprintf(stderr,"Children_arr fin\n");
     }
     obj->Initialized=false;
 }
@@ -183,7 +207,7 @@ void ca_double(children_arr* obj){
 }
 
 //ca_locate must implement a binary search later
-int ca_locate(children_arr *obj,char *input_word){
+int ca_locate_index(children_arr *obj,char *input_word){
     if(obj->Initialized==false){
         fprintf(stderr,"ca_locate called on a unitialized object\n");
         exit(-1);
@@ -229,7 +253,7 @@ void ca_force_append(children_arr* obj,char* input_word,int goal_index){
         memmove(&obj->Array[goal_index+1],&obj->Array[goal_index],movable);
     }
     obj->First_Available_Slot++;
-    obj->Array[goal_index] = malloc(sizeof(trie_node*));
+    obj->Array[goal_index] = malloc(sizeof(trie_node));
     if(obj->Array[goal_index]==NULL){
         fprintf(stderr,"Malloc failed in ca_force_append\n");
         exit(-1);
@@ -246,7 +270,7 @@ trie_node* ca_get_pointer(children_arr* obj,int goal_index){
         return NULL;
     }
     if(goal_index < obj->First_Available_Slot){
-        return obj->Array[goal_inde];
+        return obj->Array[goal_index];
     }
     return NULL;
 }
