@@ -4,7 +4,6 @@
 #include <stdbool.h>
 
 #define INIT_SIZE 2
-#define MAX_WORD_SIZE 32
 
 struct trie_node;
 struct children_arr;
@@ -33,18 +32,28 @@ int ca_locate_index(children_arr* obj,char* input_word);
 bool ca_word_exists(children_arr* obj,char* input_word,int goal_index);
 //If not,we need to place it with force_append.
 void ca_force_append(children_arr* obj,char* input_word,int goal_index);
+//Returns trie_node* of goal_index or NULL
+trie_node* ca_get_pointer(children_arr* obj,int goal_index);
 
 struct trie_node {
 	//bool Initialized;
 	bool Leaf;
 	bool Head;
-	char Word[MAX_WORD_SIZE];
+	char* Word;
 	children_arr next;
 };
+//External functions
 //Initilalizers for different purposes
 void tn_leaf(trie_node* obj,char* input_word);
 void tn_normal(trie_node* obj,int init_child_size,char* input_word);
 void tn_head(trie_node* obj,int init_child_size);
+//Deallocates dynamicly allocated memory
+void tn_fin(trie_node* obj);
+//Queries functions
+trie_node* tn_lookup(trie_node* obj,char* input_word);
+trie_node* tn_insert(trie_node* obj,char* input_word);
+
+//Internal functions
 //Transform leaf node to normal,initiliazes the children array struct.
 void tn_leaf_to_normal(trie_node* obj,int init_child_size);
 void tn_normal_to_leaf(trie_node* obj);
@@ -52,12 +61,9 @@ void tn_normal_to_leaf(trie_node* obj);
 bool tn_is_leaf(trie_node* obj);
 bool tn_is_normal(trie_node* obj);
 bool tn_is_head(trie_node* obj);
-
-
-//void tn_init(trie_node* obj);
-void tn_fin(trie_node* obj);
-int  tn_compare(trie_node* obj,char* input_word);
-
+//Internal query functions
+int	tn_compare(trie_node* obj,char* input_word);
+int	tn_lookup_index(trie_node* obj,char* input_word);
 
 
 #endif

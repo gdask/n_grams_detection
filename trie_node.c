@@ -2,17 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "trie.h"
+#include "trie_node.h"
 
 void tn_leaf(trie_node* obj,char* input_word){
     //obj->Initialized = true;
     obj->Leaf = true;
     obj->Head = false;
-    if(strlen(input_word)>=MAX_WORD_SIZE-1){
-        fprintf(stderr,"Input word too long\n");
+    obj->Word = malloc(strlen(input_word)+1);
+    if(obj->Word==NULL){
+        fprintf(stderr,"Malloc failed in tn_leaf\n");
         exit(-1);
     }
-    strncpy(obj->Word,input_word,MAX_WORD_SIZE);
+    strcpy(obj->Word,input_word);
     obj->next.Initialized = false;
     fprintf(stderr,"Tn_leaf init\n");
 }
@@ -25,6 +26,7 @@ void tn_normal(trie_node* obj,int init_child_size,char* input_word){
 
 void tn_head(trie_node* obj,int init_child_size){
     //obj->Initialized=true;
+    obj->Word=NULL;
     obj->Head=true;
     obj->Leaf=false;
     ca_init(&obj->next,init_child_size);
@@ -71,7 +73,9 @@ bool tn_is_head(trie_node* obj){
 
 void tn_fin(trie_node* obj){
     fprintf(stderr,"Trie_Node fin\n");
-    //char[MAX] is a static variable,doesnt need deallocation.
+    if(obj->Word!=NULL){
+        free(obj->Word);
+    }
     if(obj->next.Initialized==true){
         ca_fin(&obj->next);
     }
@@ -83,6 +87,53 @@ int tn_compare(trie_node* obj,char* input_word){
         exit(-1);
     }
     return strcmp(obj->Word,input_word);
+}
+
+int tn_lookup_index(trie_node* obj,char* input_word){
+    if(obj->tn_is_leaf==true){
+        //Leaf has no childern
+        return -1;
+    }
+    int possible_index = ca_locate(obj->next,input_word);
+    if(ca_word_exists(&obj->next,input_word,possible_index)==true){
+        //Using ca_ function protect us from possible illegal mem access.
+        return possible_index;
+    }
+    return -1;
+}
+
+trie_node* tn_lookup(trie_node* obj,char* input_word){
+    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
+        fprintf(stderr,"tn lookup called on a non valid trie_node object");
+        exit(-1);
+    }
+    if(tn_is_leaf(obj)==true){
+        //Leaf has no childern
+        return NULL;
+    }
+    int child_index = tn_lookup_index(obj,input_word);
+    return ca_get_pointer(&obj->next,child_index);
+}
+
+trie_node* tn_insert(trie_node* obj,char* input_word){
+    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
+        fprintf(stderr,"tn insert called on a non valid trie_node object");
+        exit(-1);
+    }
+    if(tn_is_leaf(obj)==true){
+        tn_leaf_to_normal(obj,INIT_SIZE);
+        ca_force_append(&obj->next,input_word,0);
+        return ca_get_pointer(&obj->next,0);
+    }
+    //Search in children
+    int possible_index = ca_locate(obj->next,input_word);
+    if(ca_word_exists(&obj->next,input_word,possible_index)==true){
+        return ca_get_pointer(&obj->next,possible_index);
+    }
+    else{
+        ca_force_append(&obj->next,input_word,possible_index);
+        return ca_get_pointer(&obj->next,possible_index);
+    }
 }
 
 void ca_init(children_arr* obj,int init_size){
@@ -184,4 +235,18 @@ void ca_force_append(children_arr* obj,char* input_word,int goal_index){
         exit(-1);
     }
     tn_leaf(obj->Array[goal_index],input_word);
+}
+
+trie_node* ca_get_pointer(children_arr* obj,int goal_index){
+    if(obj->Initialized==false){
+        fprintf(stderr,"ca_get_pointer called on an uninitialized object\n");
+        exit(-1);
+    }
+    if(goal_index < 0){
+        return NULL;
+    }
+    if(goal_index < obj->First_Available_Slot){
+        return obj->Array[goal_inde];
+    }
+    return NULL;
 }
