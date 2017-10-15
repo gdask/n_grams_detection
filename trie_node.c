@@ -26,6 +26,7 @@ void tn_normal(trie_node* obj,int init_child_size,char* input_word){
 
 void tn_head(trie_node* obj,int init_child_size){
     //obj->Initialized=true;
+    obj->next.Initialized=false;
     obj->Word=NULL;
     obj->Head=true;
     obj->Leaf=false;
@@ -165,10 +166,10 @@ void ca_init(children_arr* obj,int init_size){
         fprintf(stderr,"children_arr_size called with 0 init_size\n");
         exit(-1);
     }
-    /*if(obj->Initialized==true){
+    if(obj->Initialized==true){
         fprintf(stderr,"children_arr called on an already initialized object\n");
         exit(-1);
-    }*/
+    }
     obj->Array = malloc(init_size*sizeof(trie_node*));
     if(obj->Array==NULL){
         fprintf(stderr,"Malloc Failed\n");
