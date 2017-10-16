@@ -3,33 +3,37 @@
 
 #include <stdbool.h>
 
-struct query_manager_manager;
-typedef struct query_manager;
+struct line_manager;
+typedef struct line_manager;
 
-struct query_manager{
-FILE *input;
+struct line_manager{
+    FILE *input;
+    char* buffer; //each line from file
+    int bufsize;
+    char line_status; //buffer[0]:A,Q,D
 };
+
 //Input manager functions
-void query_manager_init(query_manager* obj,FILE *fp); //Initilize struct
-void query_manager_fin(query_manager* obj); //Deallocates any malloced memory
+void line_manager_init(line_manager* obj,FILE *fp); //Initilize struct
+void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
 
-//Fetch query gets the next line from file,returns FALSE if there is no next line
-bool qm_fetch_query(query_manager* obj);
+//Fetch line gets the next line from file,returns FALSE if there is no next line
+bool lm_fetch_line(line_manager* obj);
 //ex: "hello world re" >> "world re" >> "re" >> RETURN FALSE
-bool qm_fetch_ngram(query_manager* obj);
+bool lm_fetch_ngram(line_manager* obj);
 //Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS FALSE
-char* qm_fetch_word(query_manager* obj);
+char* lm_fetch_word(line_manager* obj);
 
-bool qm_is_query(query_manager* obj);
-bool qm_is_insert(query_manager* obj);
-bool qm_is_delete(query_manager* obj);
+bool lm_is_query(line_manager* obj);
+bool lm_is_insert(line_manager* obj);
+bool lm_is_delete(line_manager* obj);
 
 
 struct result_manager;
 typedef struct result_manager;
 
 struct result_manager{
-FILE *output;
+    FILE *output;
 };
 //Input manager functions
 void result_manager_init(result_manager* obj,FILE *fp); //Initilize struct
