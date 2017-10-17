@@ -8,6 +8,7 @@ void tn_leaf(trie_node* obj,char* input_word){
     //obj->Initialized = true;
     obj->Leaf = true;
     obj->Head = false;
+    obj->final = false;
     obj->Word = malloc(strlen(input_word)+1);
     if(obj->Word==NULL){
         fprintf(stderr,"Malloc failed in tn_leaf\n");
@@ -137,13 +138,21 @@ trie_node* tn_insert(trie_node* obj,char* input_word){
     }
 }
 
+void tn_set_final(trie_node* obj){
+    if(tn_is_head(obj)==true){
+        fprintf(stderr,"tn_is_head called on a head trie node\n");
+        exit(-1);
+    }
+    obj->final=true;
+}
+
 void tn_print_subtree(trie_node* obj){
     if(tn_is_leaf(obj)==true){
-        fprintf(stderr,"Leaf trie node on %p with Word= %s\n",obj,obj->Word);
+        fprintf(stderr,"Leaf trie node on %p with Word= %s ,Final = %c\n",obj,obj->Word,obj->final);
         return;
     }
     else if(tn_is_normal(obj)==true){
-        fprintf(stderr,"Normal trie node on %p with Word= %s\n",obj,obj->Word);
+        fprintf(stderr,"Normal trie node on %p with Word= %s ,Final = %c \n",obj,obj->Word,obj->final);
     }
     else if(tn_is_head(obj)==true){
         fprintf(stderr,"Head trie node on %p \n",obj);

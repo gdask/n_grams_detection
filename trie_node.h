@@ -1,5 +1,5 @@
-#ifndef TRIE_H
-#define	TRIE_H
+#ifndef TRIE_NODE_H
+#define	TRIE_NODE_H
 
 #include <stdbool.h>
 
@@ -40,6 +40,7 @@ struct trie_node {
 	bool Leaf;
 	bool Head;
 	char* Word;
+	bool final;
 	children_arr next;
 };
 //External functions
@@ -52,6 +53,7 @@ void tn_fin(trie_node* obj);
 //Queries functions
 trie_node* tn_lookup(trie_node* obj,char* input_word);
 trie_node* tn_insert(trie_node* obj,char* input_word);
+void tn_set_final(trie_node* obj);
 
 //Internal functions
 //Transform leaf node to normal,initiliazes the children array struct.
