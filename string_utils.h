@@ -11,6 +11,11 @@ struct line_manager{
     char* buffer; //each line from file
     int bufsize;
     char line_status; //buffer[0]:A,Q,D
+    char* word_start; 
+    char* n_gram_start;
+    int word_position;
+    int n_gram_position;
+    int line_end; //where \n found
 };
 
 //Input manager functions
@@ -21,7 +26,7 @@ void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
 bool lm_fetch_line(line_manager* obj);
 //ex: "hello world re" >> "world re" >> "re" >> RETURN FALSE
 bool lm_fetch_ngram(line_manager* obj);
-//Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS FALSE
+//Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS NUll
 char* lm_fetch_word(line_manager* obj);
 
 bool lm_is_query(line_manager* obj);
