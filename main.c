@@ -1,29 +1,18 @@
 #include <stdio.h>
 #include "stdlib.h"
 #include "trie_node.h"
-#include "string_utils.h"
-#include "trie.h"
+//#include "string_utils.h"
+//#include "trie.h"
 
 int main(){
-            FILE* fp;
-            fp=fopen("commands.txt","r");
-            if(fp==NULL){
-                fprintf(stderr,"Fopen failed::main\n");
-                exit(-1);
-            }
-            line_manager lm;
-            line_manager_init(&lm, fp);
-            bool result=true;
-            
-                result=lm_fetch_line(&lm);
-                result=lm_fetch_ngram(&lm);
-                char* word=lm_fetch_word(&lm);
-                while(word!=NULL){
-                    printf("word %s.\n", word);
-                    word=lm_fetch_word(&lm);
-                }
-            
+    trie_node head;
+    tn_head(&head,2);
+    trie_node* r1 = tn_insert(&head,"this");
+    trie_node* r2 = tn_insert(r1,"is");
+    trie_node* r3 = tn_insert(r2,"it");
+    tn_set_final(r3);
 
-            line_manager_fin(&lm);
-        fclose(fp);
+    tn_print_subtree(&head);
+
+    tn_fin(&head);
 }

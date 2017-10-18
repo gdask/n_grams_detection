@@ -16,7 +16,7 @@ struct children_arr{
 	bool Initialized;
 	int Size;
 	int First_Available_Slot;
-	trie_node **Array;
+	trie_node *Array;
 };
 
 void ca_init(children_arr* obj,int init_size);
@@ -74,6 +74,5 @@ int	tn_compare(trie_node* obj,char* input_word);
 int	tn_lookup_index(trie_node* obj,char* input_word);
 //Debug purpose printing function
 void tn_print_subtree(trie_node* obj);
-
 
 #endif
