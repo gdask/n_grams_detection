@@ -26,12 +26,15 @@ void ca_double(children_arr* obj);
 //forward: [goal_index,First_Avail]=>[goal_index+1,First_Avail+1]
 //backward: [goal_index,First_Avail]=>[goal_index-1,First_Avail-1]
 //void ca_shift_entries(children_arr* obj,int goal_index,bool forward);
+
 //locate index returns where the input word should be placed or where is currently placed.
 int ca_locate_index(children_arr* obj,char* input_word);
 //After locate index we should check if the word already exists in goal_index
 bool ca_word_exists(children_arr* obj,char* input_word,int goal_index);
 //If not,we need to place it with force_append.
 void ca_force_append(children_arr* obj,char* input_word,int goal_index);
+//Removes Array[goal_index]
+void ca_force_delete(children_arr* obj,int goal_index);
 //Returns trie_node* of goal_index or NULL
 trie_node* ca_get_pointer(children_arr* obj,int goal_index);
 
@@ -54,6 +57,9 @@ void tn_fin(trie_node* obj);
 trie_node* tn_lookup(trie_node* obj,char* input_word);
 trie_node* tn_insert(trie_node* obj,char* input_word);
 void tn_set_final(trie_node* obj);
+void tn_unset_final(trie_node* obj);
+bool tn_has_fork(trie_node* obj);
+bool tn_has_child(trie_node* obj);
 
 //Internal functions
 //Transform leaf node to normal,initiliazes the children array struct.

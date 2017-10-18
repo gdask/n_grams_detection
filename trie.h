@@ -4,17 +4,17 @@
 #include "trie_node.h"
 #include "string_utils.h"
 
-struct trie;
-typedef struct trie trie;
-
-stuct trie{
+struct trie{
     trie_node *head;
     int max_height;
-}
+};
+typedef struct trie trie;
 
-void trie_insert(trie* obj,line_manager* qm);
-void trie_search(trie* obj,line_manager* qm,result_manager *rm);
-void trie_delete(trie* obj,line_manager* qm);
+void trie_init(trie* obj);
+void trie_fin(trie* obj);
+void trie_insert(trie* obj,line_manager* lm);
+void trie_search(trie* obj,line_manager* lm,result_manager *rm);
+void trie_delete(trie* obj,line_manager* lm);
 
 
 

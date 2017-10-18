@@ -1,5 +1,6 @@
 #include "string_utils.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /*Initialise structure query manager
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
@@ -57,7 +58,7 @@ bool complete_phrase(char* line){
 */
 
 bool lm_fetch_line(line_manager* obj){
-    if(fgets(obj->buffer, obj->bufsize, input)){
+    if(fgets(obj->buffer, obj->bufsize, obj->input)){
         /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
         while(complete_phrase(obj->buffer)==false){
             int oldsize;
@@ -73,20 +74,20 @@ bool lm_fetch_line(line_manager* obj){
             You ask fgets to fetch 'oldsize*2' bytes,but you have only 'oldsize' space available
             in your buffer because [0-oldsize-1] stores data from previous fgets.
             */
-            fgets(&obj->buffer[oldsize-1], obj->bufsize, input); //fgets writes after oldsize-1 because before this position i have the previous line
+            fgets(&obj->buffer[oldsize-1], obj->bufsize, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
         }
 
         printf("Line:%s", obj->buffer); 
     }  
     //George: I think in case of F you just ignore this line and get the next one.
-    if(obj->buffer[0]=="F"){
+    if(obj->buffer[0]=='F'){
         //no more tasks to do
         return false;
     }
 
     /*keep line status*/
     obj->line_status=obj->buffer[0];
-    if(obj->line_status != 'A' || obj->line_status != 'D' || obj->line_status != 'Q'){
+    if(obj->line_status != 'A' && obj->line_status != 'D' && obj->line_status != 'Q'){
         fprintf(stderr,"Not a valid task :: qm_fetch_line\n");
         //George: In that case maybe we should exit execution.
         //If we dont exit execution at least we have to return false
@@ -98,12 +99,12 @@ bool lm_fetch_line(line_manager* obj){
     int i=0;
     while(obj->buffer[i]!='\n'){
         if(obj->buffer[i]==' '){
-            obj->buffer[i]=NULL;
+            obj->buffer[i]='\0';
         }
         i++;
     }
     obj->buffer[i+1]='\0'; // new line -> NULL
-    obj->buffer[bufsize-1]='\0';
+    obj->buffer[obj->bufsize-1]='\0';
 
     //Initialise n_gram position
     obj->n_gram_position= 0;
@@ -122,7 +123,7 @@ bool lm_fetch_ngram(line_manager* obj){
     if(i>=obj->line_end){
         return false;
     }
-    obj->n_gram_pos=i+1; //position of n_gram
+    obj->n_gram_position=i+1; //position of n_gram
     obj->word_start=NULL;
     return true; //no more n grams
 }
@@ -131,7 +132,7 @@ bool lm_fetch_ngram(line_manager* obj){
 word_position=-1 in first call of fetch_word*/
 char* lm_fetch_word(line_manager* obj){
     int i;
-    i=obj->n_gram_position // i care only for words of current n_gram
+    i=obj->n_gram_position; // i care only for words of current n_gram
     while(obj->buffer[i]!='\0'){
         if(obj->word_start == NULL){ //first word
             obj->word_position=i;
@@ -145,7 +146,7 @@ char* lm_fetch_word(line_manager* obj){
         obj->word_position=0;
     }
     else{
-        obj->word_start= obj-> buffer[i+1]; 
+        obj->word_start= &obj-> buffer[i+1]; 
         obj->word_position=i+1;
     }
     return obj->word_start;

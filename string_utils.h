@@ -3,9 +3,7 @@
 
 #define INIT_SIZE_BUF 512
 #include <stdbool.h>
-
-struct line_manager;
-typedef struct line_manager;
+#include <stdio.h>
 
 struct line_manager{
     FILE *input;
@@ -18,7 +16,7 @@ struct line_manager{
     int n_gram_position;
     int line_end; //where \n found
 };
-
+typedef struct line_manager line_manager;
 //Input manager functions
 void line_manager_init(line_manager* obj,FILE *fp); //Initilize struct
 void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
@@ -35,20 +33,18 @@ bool lm_is_insert(line_manager* obj);
 bool lm_is_delete(line_manager* obj);
 
 
-//struct result_manager;
-//typedef struct result_manager;
-
 struct result_manager{
     FILE *output;
 };
-//Input manager functions
+typedef struct result_manager result_manager;
+//Output manager functions
 void result_manager_init(result_manager* obj,FILE *fp); //Initilize struct
 void result_manager_fin(result_manager* obj); //Deallocates any malloced memory
 
 //Output functions
-void rm_start(result_manager *obj,int max_words); not sure if neccessary
+void rm_start(result_manager *obj,int max_words);
 // ex: previous detected ngram "hello world" next ngram "|hello world [new words]"
-void rm_new_ngram(result_managet *obj);
+void rm_new_ngram(result_manager *obj);
 // appended at [new words]
 void rm_append_word(result_manager* obj,char* word);
 // "|hello world [new words]" is appended at the result
