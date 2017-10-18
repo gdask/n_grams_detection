@@ -34,10 +34,18 @@ bool lm_is_insert(line_manager* obj);
 bool lm_is_delete(line_manager* obj);
 
 
-struct result_manager{
+typedef struct result_manager{
     FILE *output;
-};
-typedef struct result_manager result_manager;
+    char** word_buffer;
+    char* output_buffer;
+    int bufsize;
+    int output_bufsize;
+    int first_available_slot;
+    int current_ngram_index; //keep where current ngram is starting
+    int current_word_index;
+    char* current_ngram;
+}result_manager;
+
 //Output manager functions
 void result_manager_init(result_manager* obj,FILE *fp); //Initilize struct
 void result_manager_fin(result_manager* obj); //Deallocates any malloced memory
