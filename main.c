@@ -18,16 +18,10 @@ int main(){
     line_manager_init(&lm, fp); 
 
     while(lm_fetch_line(&lm)){
-        lm_fetch_ngram(&lm);
-        if(lm_is_insert(&lm)==true){
-            trie_insert(&tree,&lm);
-        }
-        else if(lm_is_delete(&lm)==true){
-            trie_delete(&tree,&lm);
-        }
+        
     }
 
-    tn_print_subtree(tree.head);
+   // tn_print_subtree(tree.head);
 
     line_manager_fin(&lm);
     trie_fin(&tree);

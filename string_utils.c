@@ -130,9 +130,12 @@ bool lm_fetch_ngram(line_manager* obj){
         return false;
     }
     obj->n_gram_position=i+1; //position of n_gram
+    if(obj->buffer[i+1]=='\0'){
+        return lm_fetch_ngram(obj);
+    }
     obj->word_start=NULL;
     obj->word_position=obj->n_gram_position;
-    //printf("Ngram first word is%s\n", &obj->buffer[obj->n_gram_position]);
+    printf("Ngram first word is%s\n", &obj->buffer[obj->n_gram_position]);
     return true; //no more n grams
 }
 
@@ -156,6 +159,9 @@ char* lm_fetch_word(line_manager* obj){
     else{
         obj->word_start= &obj-> buffer[i+1]; 
         obj->word_position=i+1;
+    }
+    if(obj->buffer[i+1]=='\0'){
+        return lm_fetch_word(obj);
     }
     return obj->word_start;
 }
@@ -210,8 +216,16 @@ void rm_append_word(result_manager* obj,char* word){
     i=obj->current_word_index;
     i++;
     obj->word_buffer[i]=word;
+    return;
 }
 
+/*This word is not a ngram, so i "clean" word_buffer*/
+void rm_ngram_undetected(result_manager* obj){
+    obj->current_word_index=-1; //not zero because it's a word
+    return;
+}
 
-
-
+/*Print everything in buffer, caution buffer has \0 as |*/
+void rm_completed(result_manager* obj){
+    
+}
