@@ -18,10 +18,10 @@ bool complete_phrase(char* line){
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
 void line_manager_init(line_manager* obj,FILE *fp){
     obj->input=fp;
-    printf("%d\n",INIT_SIZE_BUF);
+    //printf("%d\n",INIT_SIZE_BUF);
     obj->buffer= malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
-        fprintf(stderr,"Malloc failed :: line_manager_init\n");
+        //fprintf(stderr,"Malloc failed :: line_manager_init\n");
         exit(-1);
     }
     obj->bufsize = INIT_SIZE_BUF;
@@ -31,7 +31,6 @@ void line_manager_init(line_manager* obj,FILE *fp){
 void line_manager_fin(line_manager* obj){
     //Frees the dynamicly allocated memory
     if(obj->buffer==NULL) return;
-    printf("Size of buffer is:%d\n",obj->bufsize);
     free(obj->buffer);
 }
 
@@ -66,33 +65,28 @@ bool lm_fetch_line(line_manager* obj){
     if(fgets(obj->buffer, obj->bufsize, obj->input)){
         /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
         while(complete_phrase(obj->buffer)==false){
-            printf("Ready to make a realloc\n");
+            //printf("Ready to make a realloc\n");
             int oldsize;
             char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
             if(temp==NULL){
-                fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
+                //fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
                 exit(-1);
             }
             obj->buffer=temp;
             oldsize=obj->bufsize;
             obj->bufsize=2*obj->bufsize;
-            /* George Note: i think the bug is here.
-            You ask fgets to fetch 'oldsize*2' bytes,but you have only 'oldsize' space available
-            in your buffer because [0-oldsize-1] stores data from previous fgets.
-            */
-            fgets(&obj->buffer[oldsize], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+            fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
         }
 
         printf("Line read:%s", obj->buffer); 
     }
     else{ // EOF is found, my work here is done
-        //printf("EOF\n");
         return false;
     }  
     //In case of F you just ignore this line and get the next one.
     if(obj->buffer[0]=='F'){
         //no more tasks to do, IGNORE for now
-        return true;
+        lm_fetch_line(obj);
     }
 
     /*keep line status, check if ID is valid*/
@@ -125,6 +119,7 @@ bool lm_fetch_ngram(line_manager* obj){
     int i;
     i=obj->n_gram_position;
    
+    /*looks after id code*/
     while(obj->buffer[i]!='\0'){
         i++;
     }
@@ -158,8 +153,8 @@ char* lm_fetch_word(line_manager* obj){
         obj->word_position=0;
     }
     else{
-        obj->word_start= &obj-> buffer[i+1]; 
-        obj->word_position=i+1;
+        obj->word_start= &obj-> buffer[i]; 
+        obj->word_position=i;
     }
     return obj->word_start;
 }
