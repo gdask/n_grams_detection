@@ -18,10 +18,9 @@ bool complete_phrase(char* line){
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
 void line_manager_init(line_manager* obj,FILE *fp){
     obj->input=fp;
-    //printf("%d\n",INIT_SIZE_BUF);
     obj->buffer= malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
-        //fprintf(stderr,"Malloc failed :: line_manager_init\n");
+        fprintf(stderr,"Malloc failed :: line_manager_init\n");
         exit(-1);
     }
     obj->bufsize = INIT_SIZE_BUF;
@@ -160,6 +159,59 @@ char* lm_fetch_word(line_manager* obj){
     }
     return obj->word_start;
 }
+
+/*Result Manager*/
+
+/*Initialise and deallocate Memory*/
+
+void result_manager_init(result_manager* obj,FILE *fp){
+    obj->output=fp;
+    obj->output_buffer=malloc(sizeof(char)*INIT_SIZE_BUF);
+    if(obj->output_buffer==NULL){
+        fprintf(stderr,"Malloc failed :: result_manager_init\n");
+        exit(-1);
+    }
+    obj->output_bufsize=INIT_SIZE_BUF;
+    obj->word_buffer=malloc(sizeof(char*)*INIT_SIZE_BUF);
+    if(obj->word_buffer==NULL){
+        fprintf(stderr,"Malloc failed :: result_manager_init\n");
+        exit(-1);
+    }
+    obj->bufsize=0;
+}
+
+void result_manager_fin(result_manager* obj){
+    if(obj->output_buffer!=NULL){
+        free(obj->output_buffer);
+    }
+    if(obj->word_buffer!=NULL){
+        free(obj->word_buffer);
+    }
+    return;
+}
+
+/*Checks if word_size is bigger than max_words and empty-init word_buffer*/
+void rm_start(result_manager *obj,int max_words){
+    if(obj->bufsize<max_words){ //you need to allocate more memory
+        char** temp = realloc(obj->word_buffer, (obj->bufsize+(max_words-obj->bufsize))*sizeof(char*));
+        if(temp==NULL){
+            fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
+            exit(-1);
+        }
+        obj->word_buffer=temp;
+    }
+    /*a new new ngram starts, if this happend i dont make strcpy of thing of buffer*/
+    obj->first_available_slot=0;
+}
+
+/*add in word_buffer a new pointer to word after the first available*/
+void rm_append_word(result_manager* obj,char* word){
+    int i;
+    i=obj->current_word_index;
+    i++;
+    obj->word_buffer[i]=word;
+}
+
 
 
 
