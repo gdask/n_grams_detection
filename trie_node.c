@@ -114,13 +114,13 @@ trie_node* tn_lookup(trie_node* obj,char* input_word){
     return ca_get_pointer(&obj->next,tn_lookup_index(obj,input_word));
 }
 
-trie_node* tn_insert(trie_node* obj,char* input_word){
+trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
         fprintf(stderr,"tn insert called on a non valid trie_node object");
         exit(-1);
     }
     if(tn_is_leaf(obj)==true){
-        tn_leaf_to_normal(obj,INIT_SIZE);
+        tn_leaf_to_normal(obj,init_child_size);
         ca_force_append(&obj->next,input_word,0);
         return ca_get_pointer(&obj->next,0);
     }

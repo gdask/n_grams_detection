@@ -12,7 +12,7 @@ int main(){
         exit(-1);
     }
     trie tree;
-    trie_init(&tree);
+    trie_init(&tree,4);
 
     line_manager lm;
     line_manager_init(&lm, fp); 

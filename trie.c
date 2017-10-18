@@ -1,14 +1,19 @@
 #include "trie.h"
 #include <stdlib.h>
 
-void trie_init(trie* obj){
+void trie_init(trie* obj,int init_child_arr_size){
+    if(init_child_arr_size < 1){
+        fprintf(stderr,"Trie init called with wrong init child arr size\n");
+        exit(-1);
+    }
+    obj->ca_init_size = init_child_arr_size;
     obj->head = malloc(sizeof(trie_node));
     if(obj->head==NULL){
         fprintf(stderr,"Malloc failed in trie init\n");
         exit(-1);
     }
     //TN init size have to change
-    tn_head(obj->head,2);
+    tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
 }
 
@@ -23,7 +28,7 @@ void trie_insert(trie* obj,line_manager* lm){
     trie_node* current_node = obj->head;
     int height=0;
     while(current_word!=NULL){
-        current_node = tn_insert(current_node,current_word);
+        current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         height++;
         current_word = lm_fetch_word(lm);
     }

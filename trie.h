@@ -7,10 +7,11 @@
 struct trie{
     trie_node *head;
     int max_height;
+    int ca_init_size;
 };
 typedef struct trie trie;
 
-void trie_init(trie* obj);
+void trie_init(trie* obj,int init_child_arr_size);
 void trie_fin(trie* obj);
 void trie_insert(trie* obj,line_manager* lm);
 void trie_search(trie* obj,line_manager* lm,result_manager *rm);
