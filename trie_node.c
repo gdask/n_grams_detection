@@ -18,7 +18,7 @@ void tn_leaf(trie_node* obj,char* input_word){
     }
     strcpy(obj->Word,input_word);
     obj->next.Initialized = false;
-    fprintf(stderr,"Tn_leaf init\n");
+    //fprintf(stderr,"Tn_leaf init\n");
 }
 
 void tn_normal(trie_node* obj,int init_child_size,char* input_word){
@@ -76,7 +76,7 @@ bool tn_is_head(trie_node* obj){
 }
 
 void tn_fin(trie_node* obj){
-    fprintf(stderr,"Trie_Node fin\n");
+    //fprintf(stderr,"Trie_Node fin\n");
     if(obj->Word!=NULL){
         free(obj->Word);
     }
@@ -216,7 +216,7 @@ void ca_init(children_arr* obj,int init_size){
 
 void ca_fin(children_arr* obj){
     if(obj->Initialized == true){
-        fprintf(stderr,"Children_arr fin\n");
+        //fprintf(stderr,"Children_arr fin\n");
         int i;
         for(i=0;i<obj->First_Available_Slot;i++){
             tn_fin(&obj->Array[i]);
