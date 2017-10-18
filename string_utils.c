@@ -18,9 +18,10 @@ bool complete_phrase(char* line){
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
 void line_manager_init(line_manager* obj,FILE *fp){
     obj->input=fp;
+    printf("%d\n",INIT_SIZE_BUF);
     obj->buffer= malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
-        fprintf(stderr,"Malloc failed in line_manager_init\n");
+        fprintf(stderr,"Malloc failed :: line_manager_init\n");
         exit(-1);
     }
     obj->bufsize = INIT_SIZE_BUF;
