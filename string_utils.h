@@ -1,7 +1,7 @@
 #ifndef STRING_UTILS_H
 #define	STRING_UTILS_H
 
-#define INIT_SIZE_BUF 512
+#define INIT_SIZE_BUF 4
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -16,6 +16,7 @@ struct line_manager{
     int n_gram_position;
     int line_end; //where \n found
 };
+
 typedef struct line_manager line_manager;
 //Input manager functions
 void line_manager_init(line_manager* obj,FILE *fp); //Initilize struct
