@@ -198,7 +198,6 @@ void result_manager_fin(result_manager* obj){
 
 /*Checks if word_size is bigger than max_words and empty-init word_buffer*/
 void rm_start(result_manager *obj,int max_words){
-    printf("rm_start\n");
     if(obj->bufsize<max_words){ //you need to allocate more memory
         char** temp = realloc(obj->word_buffer, (obj->bufsize+(max_words-obj->bufsize))*sizeof(char*));
         if(temp==NULL){
@@ -208,10 +207,15 @@ void rm_start(result_manager *obj,int max_words){
         obj->word_buffer=temp;
     }
     /*a new new ngram starts, if this happend i dont make strcpy of thing of buffer*/
-    obj->current_ngram=NULL;
-    obj->current_word_index=-1;
     obj->first_available_slot=0;
     return;
+}
+
+/*Now new ngram is entering to word buffer, so i want it clean and i dont mind of old ngram*/
+void rm_new_ngram(result_manager *obj){
+    obj->current_ngram=NULL;
+    obj->current_word_index=-1;
+    memset(obj->word_buffer, 0, obj->bufsize);
 }
 
 /*add in word_buffer a new pointer to word after the first available*/
@@ -221,7 +225,6 @@ void rm_append_word(result_manager* obj,char* word){
     i++;
     obj->word_buffer[i]= word;
     obj->current_word_index=i;
-    printf("new word added:%s\n",obj->word_buffer[i]);
     return;
 }
 
@@ -234,24 +237,24 @@ void rm_ngram_undetected(result_manager* obj){
 }
 
 /*Αdd all the words of word_buffer to output buffer plus one |
-if obj->first_available_slot=0 that means that i dont need to strcpy last ngram of output buffer
-keep end last valid char of buffer*/
+if current_ngram==NULL that means that i dont need to strcpy last ngram of output buffer, else make a copy of that*/
 void rm_ngram_detected(result_manager* obj){
     int word_len;
     int i=0;
     /*check if current_ngram is null, so you can or not use last thing that was written in output_buffer*/
     if(obj->current_ngram!=NULL){
         /*check if it fits*/
-        word_len=strlen(obj->current_ngram)-1; //i dont need |
-        strcpy(&obj->output_buffer[obj->first_available_slot], obj->current_ngram);
-        obj->output_buffer[obj->first_available_slot+word_len]='\0'; // if it dont counts /0 else i will test word_len-1
+        word_len=strlen(obj->current_ngram); //i dont need |
+        strcpy(&obj->output_buffer[obj->first_available_slot+1], obj->current_ngram);
+        obj->output_buffer[obj->first_available_slot+word_len]=' '; // if it dont counts /0 else i will test word_len-1
         //obj->current_ngram=&obj->output_buffer[first_available_slot];
-        obj->first_available_slot=obj->first_available_slot+word_len;
+        obj->first_available_slot=obj->first_available_slot+1+word_len;
     }
     else{
         obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
     }
     while(obj->word_buffer[i]!='\0'){
+        printf("%s\n",obj->word_buffer[i]);
         /*find and copy to first available slot in output_buffer*/
         strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
         strcat(&obj->output_buffer[obj->first_available_slot], " ");
@@ -259,19 +262,28 @@ void rm_ngram_detected(result_manager* obj){
         obj->first_available_slot=obj->first_available_slot+word_len;
         i++;
     }
-    obj->output_buffer[i]='|'; //last thing shouldn't be space but |
+    obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
+    printf("Current ngram:%s\n",obj->current_ngram);
+    /*clean word buffer*/
+    memset(obj->word_buffer, 0, obj->bufsize);
+    obj->current_word_index=-1;
 }
 
 /*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
 void rm_completed(result_manager* obj){
     int i=0;
-    if(obj->current_word_index==-1){ //no ngram detected
+    if(obj->first_available_slot==0){ //no ngram detected
         fprintf(obj->output,"-1\n");
     }    
     else{
         while(i<obj->first_available_slot-1){ 
             while(obj->output_buffer[i]!='\0'){
-                fprintf(obj->output,"%c",obj->output_buffer[i]);
+                if(i!=obj->first_available_slot-1){
+                    fprintf(obj->output,"%c",obj->output_buffer[i]);
+                }
+                else{
+                    break;
+                }
                 i++;
             }
             i++;
