@@ -40,11 +40,11 @@ typedef struct result_manager{
     char* output_buffer;
     int bufsize;
     int output_bufsize;
-    int first_available_slot;
+    int first_available_slot; //first available slot to put words of word_buffer
+    char* current_ngram; //last ngram of output_buffer
     int current_ngram_index; //keep where current ngram is starting
-    int current_word_index;
+    int current_word_index; //keep where current word is starting
     int buffer_end;
-    char* current_ngram;
 }result_manager;
 
 //Output manager functions
