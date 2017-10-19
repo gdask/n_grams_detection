@@ -43,6 +43,7 @@ typedef struct result_manager{
     int first_available_slot;
     int current_ngram_index; //keep where current ngram is starting
     int current_word_index;
+    int buffer_end;
     char* current_ngram;
 }result_manager;
 

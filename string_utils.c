@@ -225,7 +225,14 @@ void rm_ngram_undetected(result_manager* obj){
     return;
 }
 
-/*Print everything in buffer, caution buffer has \0 as |*/
+/*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
 void rm_completed(result_manager* obj){
-    
+    int i=0;
+    while(i<obj->buffer_end){
+        while(obj->output_buffer[i]!='\0'){
+            printf("%c",obj->output_buffer[i]);
+            i++;
+        }
+        i++;
+    }
 }
