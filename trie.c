@@ -76,3 +76,26 @@ void trie_delete(trie* obj,line_manager* lm){
     }
 
 }
+
+void trie_search(trie* obj,line_manager* lm,result_manager* rm){
+    bool valid_ngram = lm_fetch_ngram(lm);
+    rm_start(rm,obj->max_height);
+
+    while(valid_ngram==true){
+        rm_new_ngram(rm);
+        trie_node* current_node = obj->head;
+        char* current_word = lm_fetch_word(lm);
+        while(current_word!=NULL){
+            current_node = tn_lookup(current_node,current_word);
+            if(current_node==NULL){
+                rm_ngram_undetected(rm);
+                break;
+            }
+            rm_append_word(rm,current_word);
+            if(current_node->final==true) rm_ngram_detected(rm);
+            current_word = lm_fetch_word(lm);
+        }
+        valid_ngram=lm_fetch_ngram(lm);
+    }
+    rm_completed(rm);
+}

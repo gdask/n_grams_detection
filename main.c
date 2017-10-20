@@ -6,48 +6,52 @@
 #include "trie.h"
 
 int main(){
-    /*
-    FILE* fp;
-    fp=fopen("commands.txt","r");
-    if(fp==NULL){
-        fprintf(stderr,"Fopen failed::main\n");
-        exit(-1);
+    trie db;
+    trie_init(&db,5);
+    FILE *fp,*re,*in;
+    in=fopen("test.init","r");
+    fp=fopen("test.work","r");
+    re=fopen("query_res.txt","w");
+    //INIT FILE
+    line_manager lmin;
+    line_manager_init(&lmin,in);
+    bool has_line = lm_fetch_line(&lmin,'I');    
+    while(has_line==true){
+        lm_fetch_ngram(&lmin);
+        trie_insert(&db,&lmin);
+        has_line= lm_fetch_line(&lmin,'I');
     }
-    trie tree;
-    trie_init(&tree,4);
 
     line_manager lm;
-    line_manager_init(&lm, fp); 
-
-    while(lm_fetch_line(&lm)){
-        
-    }
-
-   // tn_print_subtree(tree.head);
-
-    line_manager_fin(&lm);
-    trie_fin(&tree);
-    fclose(fp);*/
-    
-    FILE *fp;
-    fp=fopen("commands.txt","rw");
-    line_manager lm;
-    line_manager_init(&lm, fp);
-    bool result=lm_fetch_line(&lm, 'I');
-    char* word;
-    while(result==true){
-        bool result_=lm_fetch_ngram(&lm);
-        while(result_==true){
-            word=lm_fetch_word(&lm);
-            while(word!=NULL){
-                printf("word return: %s\n",word);
-                word=lm_fetch_word(&lm);
-            }
-            result_=lm_fetch_ngram(&lm);
+    line_manager_init(&lm,fp);
+    result_manager rm;
+    result_manager_init(&rm,re);
+    //QUERY FILE
+    has_line=lm_fetch_line(&lm,'Q');
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
         }
-        result=lm_fetch_line(&lm, 'I');
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm,'Q');
     }
+
     line_manager_fin(&lm);
+    line_manager_fin(&lmin);
+    result_manager_fin(&rm);
     fclose(fp);
+    fclose(re);
+    fclose(in);
+    trie_fin(&db);
     return 0;
 }

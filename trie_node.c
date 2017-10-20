@@ -298,6 +298,7 @@ void ca_force_append(children_arr* obj,char* input_word,int goal_index){
 
 trie_node* ca_get_pointer(children_arr* obj,int goal_index){
     if(obj->Initialized==false){
+        //return NULL;
         fprintf(stderr,"ca_get_pointer called on an uninitialized object\n");
         exit(-1);
     }
