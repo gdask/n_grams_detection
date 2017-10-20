@@ -1,7 +1,7 @@
 #ifndef STRING_UTILS_H
 #define	STRING_UTILS_H
 
-#define INIT_SIZE_BUF 512
+#define INIT_SIZE_BUF 5
 #include <stdbool.h>
 #include <stdio.h>
 

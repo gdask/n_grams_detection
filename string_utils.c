@@ -206,7 +206,7 @@ void rm_start(result_manager *obj,int max_words){
         }
         obj->word_buffer=temp;
     }
-    /*a new new ngram starts, if this happend i dont make strcpy of thing of buffer*/
+    /*a new new ngram starts*/
     obj->first_available_slot=0;
     return;
 }
@@ -223,6 +223,16 @@ void rm_append_word(result_manager* obj,char* word){
     int i;
     i=obj->current_word_index;
     i++;
+    /*check if a new word fits, maybe it doesnt need, because rm_start handles it but just in case*/
+    if(i>=obj->bufsize){
+        char** temp = realloc(obj->word_buffer, 2*obj->bufsize*sizeof(char*));
+        if(temp==NULL){
+            fprintf(stderr,"Realloc Failed :: rm_append_word\n");
+            exit(-1);
+        }
+        obj->word_buffer=temp;
+        obj->bufsize= 2*obj->bufsize*sizeof(char*);
+    }
     obj->word_buffer[i]= word;
     obj->current_word_index=i;
     return;
@@ -241,6 +251,16 @@ if current_ngram==NULL that means that i dont need to strcpy last ngram of outpu
 void rm_ngram_detected(result_manager* obj){
     int word_len;
     int i=0;
+    if(obj->first_available_slot>=obj->output_bufsize){
+        /*first available slot is out of boundries so double output buffer */
+        char* temp = realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
+        if(temp==NULL){
+            fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
+            exit(-1);
+        }
+        obj->output_buffer=temp;
+        obj->output_bufsize= 2*obj->output_bufsize;
+    }
     /*check if current_ngram is null, so you can or not use last thing that was written in output_buffer*/
     if(obj->current_ngram!=NULL){
         /*check if it fits*/
