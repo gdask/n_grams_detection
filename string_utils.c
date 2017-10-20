@@ -52,46 +52,99 @@ bool lm_is_delete(line_manager* obj){
     return false;
 }
 
-/*  -Gets a line from file, handles bigger lines than expected
+/*  
+    lm_fetch_line need to know the status of file(init file='I', query file= 'Q')
+    -Gets a line from file, handles bigger lines than expected
     -Keep key of action (A,Q,D)
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj){
+bool lm_fetch_line(line_manager* obj, char status){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
-    
-    if(fgets(obj->buffer, obj->bufsize, obj->input)){
-        /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
-        while(complete_phrase(obj->buffer)==false){
-            //printf("Ready to make a realloc\n");
-            int oldsize;
-            char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
-            if(temp==NULL){
-                fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
-                exit(-1);
+
+    if(status=='Q'){
+        if(fgets(obj->buffer, obj->bufsize, obj->input)){
+            /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
+            while(complete_phrase(obj->buffer)==false){
+                //printf("Ready to make a realloc\n");
+                int oldsize;
+                char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
+                if(temp==NULL){
+                    fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
+                    exit(-1);
+                }
+                obj->buffer=temp;
+                oldsize=obj->bufsize;
+                obj->bufsize=2*obj->bufsize;
+                fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
             }
-            obj->buffer=temp;
-            oldsize=obj->bufsize;
-            obj->bufsize=2*obj->bufsize;
-            fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+            printf("Line read:%s", obj->buffer);
         }
-        printf("Line read:%s", obj->buffer);
+        else{ // EOF is found, my work here is done
+            return false;
+        }  
+    
+        /*Valid Task Recognition*/
+        if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
+            //In case of F you just ignore this line and get the next one.
+            if(obj->buffer[0]=='F'){
+                //no more tasks to do, IGNORE for now
+                return lm_fetch_line(obj, status);  
+            }
+            /*keep line status, check if ID is valid*/
+            obj->line_status=obj->buffer[0];
+    
+            /*Replace \n and _ with NULL*/
+            int i=0;
+            while(obj->buffer[i]!='\n'){
+                if(obj->buffer[i]==' '){
+                    obj->buffer[i]='\0';
+                }
+                i++;
+            }
+    
+            obj->buffer[i]='\0'; // new line -> NULL
+            obj->line_end=i;
+            obj->buffer[obj->bufsize-1]='\0';
+    
+            //Initialise n_gram position
+            obj->n_gram_position= 0;
+            return true;
+        }
+        else{
+            fprintf(stderr,"Invalid task :: qm_fetch_line\n");
+            return false;
+        }
     }
-    else{ // EOF is found, my work here is done
-        return false;
-    }  
-
-    /*Valid Task Recognition*/
-    if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
-        //In case of F you just ignore this line and get the next one.
-        if(obj->buffer[0]=='F'){
-            //no more tasks to do, IGNORE for now
-            return lm_fetch_line(obj);  
+    else if(status=='I'){
+        //every line is a ngram
+        obj->buffer[0]='A';
+        obj->buffer[1]=' ';
+        if(fgets(&obj->buffer[2],  obj->bufsize-2, obj->input)){
+            /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
+            while(complete_phrase(obj->buffer)==false){
+                //printf("Ready to make a realloc\n");
+                int oldsize;
+                char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
+                if(temp==NULL){
+                    fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
+                    exit(-1);
+                }
+                obj->buffer=temp;
+                oldsize=obj->bufsize;
+                obj->bufsize=2*obj->bufsize;
+                fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+            }
+            printf("Line read:%s", obj->buffer);
         }
-        /*keep line status, check if ID is valid*/
-        obj->line_status=obj->buffer[0];
+        else{ // EOF is found, my work here is done
+            return false;
+        }  
 
+        /*keep line status, for this case is only an addition*/
+        obj->line_status='A';
+    
         /*Replace \n and _ with NULL*/
         int i=0;
         while(obj->buffer[i]!='\n'){
@@ -100,19 +153,16 @@ bool lm_fetch_line(line_manager* obj){
             }
             i++;
         }
-
+    
         obj->buffer[i]='\0'; // new line -> NULL
         obj->line_end=i;
         obj->buffer[obj->bufsize-1]='\0';
-
-        //Initialise n_gram position
+    
+        //Initialise n_gram position  
         obj->n_gram_position= 0;
         return true;
     }
-    else{
-        fprintf(stderr,"Invalid task :: qm_fetch_line\n");
-        return false;
-    }
+    //return false;   
 }
 
 /*each time that fetch_ngram is called, i modify my obj->Buffer with one word less.
@@ -159,9 +209,9 @@ char* lm_fetch_word(line_manager* obj){
     else{
         obj->word_start= &obj-> buffer[i+1]; 
         obj->word_position=i+1;
-    }
-    if(obj->buffer[i+1]=='\0'){
-        return lm_fetch_word(obj);
+        /*if(obj->buffer[i+1]=='\0'){
+            return lm_fetch_word(obj);
+        }*/
     }
     return obj->word_start;
 }
