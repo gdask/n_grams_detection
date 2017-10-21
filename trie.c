@@ -47,9 +47,9 @@ void trie_delete(trie* obj,line_manager* lm){
     }
 
     trie_node* current_node = obj->head;
-    int current_index;
+    int current_index=-1;
     trie_node* last_fork = obj->head;
-    int critical_index=0;
+    int critical_index= tn_lookup_index(current_node,current_word);
 
     while(current_word!=NULL){
         current_index = tn_lookup_index(current_node,current_word);
@@ -57,13 +57,12 @@ void trie_delete(trie* obj,line_manager* lm){
             //N_gram didnt found,nothing changes in trie
             return;
         }
-        current_word = lm_fetch_word(lm);
-
-        current_node = ca_get_pointer(&current_node->next,current_index);
-        if(tn_has_fork(current_node)==true || (current_node->final==true && current_word!=NULL)){
+        if(tn_has_fork(current_node)==true || (current_node->final==true && tn_has_child(current_node)==true)){
             last_fork = current_node;
             critical_index = current_index;
         }
+        current_node = ca_get_pointer(&current_node->next,current_index);
+        current_word = lm_fetch_word(lm);
     }
 
     if(tn_has_child(current_node)==true){
@@ -72,7 +71,7 @@ void trie_delete(trie* obj,line_manager* lm){
     else{
         //deletes entire path from last_fork to leaf
         ca_force_delete(&last_fork->next,critical_index);
-        //tn_normal_to_leaf(last_fork);
+        //if(last_fork!=obj->head && tn_has_fork(last_fork)==false)tn_normal_to_leaf(last_fork);
     }
 
 }

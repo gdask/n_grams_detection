@@ -48,6 +48,7 @@ void tn_leaf_to_normal(trie_node* obj,int init_child_size){
 void tn_normal_to_leaf(trie_node* obj){
     if(tn_is_normal(obj)!=true){
         fprintf(stderr,"tn_normal_to_leaf called on a non tn_normal object\n");
+        //tn_print_subtree(obj);
         exit(-1);
     }
     ca_fin(&obj->next);
@@ -55,6 +56,7 @@ void tn_normal_to_leaf(trie_node* obj){
 }
 
 bool tn_is_leaf(trie_node* obj){
+    //if(obj->Leaf==true) return true;
     if(obj->Leaf==true && obj->Head==false && obj->next.Initialized==false){
         return true;
     }
@@ -62,6 +64,7 @@ bool tn_is_leaf(trie_node* obj){
 }
 
 bool tn_is_normal(trie_node* obj){
+    //if(obj->Leaf==false && obj->Head==false) return true;
     if(obj->Leaf==false && obj->Head==false && obj->next.Initialized==true){
         return true;
     }
@@ -88,6 +91,7 @@ void tn_fin(trie_node* obj){
 int tn_compare(trie_node* obj,char* input_word){
     if(tn_is_leaf(obj)==false && tn_is_normal(obj)==false){
         fprintf(stderr,"tn_compare called on false object\n");
+        tn_print_subtree(obj);
         exit(-1);
     }
     return strcmp(obj->Word,input_word);
@@ -111,6 +115,14 @@ int tn_lookup_index(trie_node* obj,char* input_word){
 }
 
 trie_node* tn_lookup(trie_node* obj,char* input_word){
+    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
+        fprintf(stderr,"tn lookup called on a non valid trie_node object");
+        exit(-1);
+    }
+    if(tn_is_leaf(obj)==true){
+        //Leaf has no childern
+        return NULL;
+    }
     return ca_get_pointer(&obj->next,tn_lookup_index(obj,input_word));
 }
 
@@ -183,7 +195,7 @@ void tn_print_subtree(trie_node* obj){
         fprintf(stderr,"\nHead node on %p \n",obj);
     }
     else{
-        fprintf(stderr,"tn_print_subtree called on an invalid object\n");
+        fprintf(stderr,"tn_print_subtree called on an invalid object %p\n",obj);
         exit(-1);
     }
     fprintf(stderr,"Size of children_array = %d ,Children ptr = ",obj->next.Size);
@@ -313,11 +325,11 @@ trie_node* ca_get_pointer(children_arr* obj,int goal_index){
 
 void ca_force_delete(children_arr* obj,int goal_index){
     if(obj->Initialized==false){
-        fprintf(stderr,"ca_force_delete called on an uninitialized object\n");
+        fprintf(stderr,"ca_force_delete called on an uninitialized object at %p\n",obj);
         exit(-1);
     }
-    if(goal_index >= obj->First_Available_Slot){
-        fprintf(stderr,"ca_force_delete called with out of bounds goal_index\n");
+    if(goal_index >= obj->First_Available_Slot || goal_index < 0){
+        fprintf(stderr,"ca_force_delete called with out of bounds goal_index ,FAS: %d ,%d\n",goal_index,obj->First_Available_Slot);
         exit(-1);
     }
     if(goal_index == obj->First_Available_Slot-1){
@@ -326,9 +338,12 @@ void ca_force_delete(children_arr* obj,int goal_index){
         return;
     }
     trie_node* temp = &obj->Array[goal_index];
+    //fprintf(stderr,"subtree to be fin: %p\n",temp);
+    //tn_print_subtree(temp);
+    tn_fin(temp);
+    //free(temp);
+
     size_t movable =(obj->First_Available_Slot-goal_index-1)*sizeof(trie_node);
     memmove(&obj->Array[goal_index],&obj->Array[goal_index+1],movable);
     obj->First_Available_Slot--;
-    tn_fin(temp);
-    //free(temp);
 }

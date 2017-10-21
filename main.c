@@ -22,6 +22,8 @@ int main(){
         has_line= lm_fetch_line(&lmin,'I');
     }
 
+    //tn_print_subtree(db.head);
+
     line_manager lm;
     line_manager_init(&lm,fp);
     result_manager rm;
@@ -43,6 +45,7 @@ int main(){
         else{
             fprintf(stderr,"Corrupted line\n");
         }
+        //tn_print_subtree(db.head);
         has_line=lm_fetch_line(&lm,'Q');
     }
 
