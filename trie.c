@@ -12,14 +12,15 @@ void trie_init(trie* obj,int init_child_arr_size){
         fprintf(stderr,"Malloc failed in trie init\n");
         exit(-1);
     }
-    //TN init size have to change
     tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
+    pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
 }
 
 void trie_fin(trie* obj){
     tn_fin(obj->head);
     free(obj->head);
+    pointer_set_fin(&obj->detected_nodes);
 }
 
 
@@ -79,6 +80,7 @@ void trie_delete(trie* obj,line_manager* lm){
 void trie_search(trie* obj,line_manager* lm,result_manager* rm){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
+    ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
 
     while(valid_ngram==true){
         rm_new_ngram(rm);
@@ -91,10 +93,52 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm){
                 break;
             }
             rm_append_word(rm,current_word);
-            if(current_node->final==true) rm_ngram_detected(rm);
+            if(current_node->final==true && ps_append(&obj->detected_nodes,current_node)==true){
+                rm_ngram_detected(rm);
+            }
             current_word = lm_fetch_word(lm);
         }
         valid_ngram=lm_fetch_ngram(lm);
     }
     rm_completed(rm);
+}
+
+void pointer_set_init(pointer_set* obj,int init_size){
+    obj->Size = init_size;
+    obj->First_Available_Slot=0;
+    if(init_size < 1){
+        fprintf(stderr,"Pointer set init called with < 1 init size\n");
+        exit(-1);
+    }
+    obj->Array = malloc(init_size*sizeof(void*));
+    if(obj->Array==NULL){
+        fprintf(stderr,"Pointer set init, malloc failed\n");
+        exit(-1);
+    }
+}
+
+void pointer_set_fin(pointer_set* obj){
+    free(obj->Array);
+}
+
+void ps_reuse(pointer_set* obj, int new_size){
+    if(obj->Size < new_size){
+        obj->Array = realloc(obj->Array,new_size*2*sizeof(void*));
+        if(obj->Array==NULL){
+            fprintf(stderr,"ps resize realloc failed\n");
+            exit(-1);
+        }
+        obj->Size = obj->Size*2;
+    }
+    obj->First_Available_Slot=0;
+}
+
+bool ps_append(pointer_set* obj,void* ptr){
+    int i;
+    for(i=0;i<obj->First_Available_Slot;i++){
+        if(obj->Array[i]==ptr) return false;
+    }
+    obj->Array[obj->First_Available_Slot]= ptr;
+    obj->First_Available_Slot++;
+    return true;
 }
