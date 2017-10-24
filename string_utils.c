@@ -14,6 +14,10 @@ bool complete_phrase(char* line){
     return false;
 }
 
+int lm_n_gram_counter(line_manager* obj){
+    return obj->n_gram_counter;
+}
+
 /*Initialise structure query manager
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
 void line_manager_init(line_manager* obj,FILE *fp){
@@ -97,13 +101,16 @@ bool lm_fetch_line(line_manager* obj, char status){
     
             /*Replace \n and _ with NULL*/
             int i=0;
+            int words=0;
             while(obj->buffer[i]!='\n'){
                 if(obj->buffer[i]==' '){
+                    words++;
                     obj->buffer[i]='\0';
                 }
                 i++;
             }
-    
+            words++; //dont forget the last word is followed by \n not space
+            obj->n_gram_counter=(2*words)-1;
             obj->buffer[i]='\0'; // new line -> NULL
             obj->line_end=i;
             obj->buffer[obj->bufsize-1]='\0';
@@ -147,13 +154,16 @@ bool lm_fetch_line(line_manager* obj, char status){
     
         /*Replace \n and _ with NULL*/
         int i=0;
+        int words=0;
         while(obj->buffer[i]!='\n'){
             if(obj->buffer[i]==' '){
+                words++;
                 obj->buffer[i]='\0';
             }
             i++;
         }
-    
+        words++;
+        obj->n_gram_counter=(2*words)-1;
         obj->buffer[i]='\0'; // new line -> NULL
         obj->line_end=i;
         obj->buffer[obj->bufsize-1]='\0';

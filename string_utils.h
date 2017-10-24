@@ -14,6 +14,7 @@ struct line_manager{
     char* n_gram_start;
     int word_position;
     int n_gram_position;
+    int n_gram_counter;
     int line_end; //where \n found
 };
 
@@ -32,7 +33,7 @@ char* lm_fetch_word(line_manager* obj);
 bool lm_is_query(line_manager* obj);
 bool lm_is_insert(line_manager* obj);
 bool lm_is_delete(line_manager* obj);
-
+int lm_n_gram_counter(line_manager* obj);
 
 typedef struct result_manager{
     FILE *output;
