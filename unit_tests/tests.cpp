@@ -35,6 +35,8 @@ TEST(Fetchline, WrongInput){
     fclose(in);
 }
 
+
+/*This test has no point, is to show you how to use exit assert*/
 TEST(Fetchline, Unitisializedbuf){
     line_manager lm;
     FILE* in;
