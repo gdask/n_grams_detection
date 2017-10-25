@@ -1,5 +1,5 @@
 Compile:
-cmake CMakeLists.txt (Not always needed, only if cache or install .txt are missing)
+cmake CMakeLists.txt /*Not always needed, only if cache or install .txt are missing*/
 make
 ./runTests
 
