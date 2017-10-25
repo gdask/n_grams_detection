@@ -12,6 +12,5 @@ comp : $(OBJECTS)
 %.o: %.cpp $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-
 clean: 
 	rm -f $(OBJECTS) $(OUT)

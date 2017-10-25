@@ -23,7 +23,7 @@ Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with t
 void line_manager_init(line_manager* obj,FILE *fp, char file_status){
     obj->input=fp;
     obj->file_status=file_status;
-    obj->buffer= malloc(INIT_SIZE_BUF*sizeof(char)); 
+    obj->buffer= (char*) malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
         fprintf(stderr,"Malloc failed :: line_manager_init\n");
         exit(-1);
@@ -68,15 +68,19 @@ bool lm_fetch_line(line_manager* obj){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
 
+    if(obj->buffer==NULL){
+        fprintf(stderr,"Object is not initisialised:: lm_fetch_line\n");
+        exit(-1);
+    }
     if(obj->file_status=='Q'){
         if(fgets(obj->buffer, obj->bufsize, obj->input)){
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
                 //printf("Ready to make a realloc\n");
                 int oldsize;
-                char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
+                char* temp = (char*)realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
                 if(temp==NULL){
-                    fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
+                    fprintf(stderr,"Realloc Failed :: lm_fetch_line\n");
                     exit(-1);
                 }
                 obj->buffer=temp;
@@ -134,7 +138,7 @@ bool lm_fetch_line(line_manager* obj){
             while(complete_phrase(obj->buffer)==false){
                 //printf("Ready to make a realloc\n");
                 int oldsize;
-                char* temp = realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
+                char* temp = (char*)realloc(obj->buffer, 2*obj->bufsize*sizeof(char));
                 if(temp==NULL){
                     fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
                     exit(-1);
@@ -233,13 +237,13 @@ char* lm_fetch_word(line_manager* obj){
 
 void result_manager_init(result_manager* obj,FILE *fp){
     obj->output=fp;
-    obj->output_buffer=malloc(sizeof(char)*INIT_SIZE_BUF);
+    obj->output_buffer=(char*)malloc(sizeof(char)*INIT_SIZE_BUF);
     if(obj->output_buffer==NULL){
         fprintf(stderr,"Malloc failed :: result_manager_init\n");
         exit(-1);
     }
     obj->output_bufsize=INIT_SIZE_BUF;
-    obj->word_buffer=malloc(sizeof(char*)*INIT_SIZE_BUF);
+    obj->word_buffer=(char**)malloc(sizeof(char*)*INIT_SIZE_BUF);
     if(obj->word_buffer==NULL){
         fprintf(stderr,"Malloc failed :: result_manager_init\n");
         exit(-1);
@@ -260,7 +264,7 @@ void result_manager_fin(result_manager* obj){
 /*Checks if word_size is bigger than max_words and empty-init word_buffer*/
 void rm_start(result_manager *obj,int max_words){
     if(obj->bufsize<max_words){ //you need to allocate more memory
-        char** temp = realloc(obj->word_buffer, (obj->bufsize+(max_words-obj->bufsize))*sizeof(char*));
+        char** temp = (char**)realloc(obj->word_buffer, (obj->bufsize+(max_words-obj->bufsize))*sizeof(char*));
         if(temp==NULL){
             fprintf(stderr,"Realloc Failed :: qm_fetch_line\n");
             exit(-1);
@@ -286,7 +290,7 @@ void rm_append_word(result_manager* obj,char* word){
     i++;
     /*check if a new word fits, maybe it doesnt need, because rm_start handles it but just in case*/
     if(i>=obj->bufsize){
-        char** temp = realloc(obj->word_buffer, 2*obj->bufsize*sizeof(char*));
+        char** temp = (char**)realloc(obj->word_buffer, 2*obj->bufsize*sizeof(char*));
         if(temp==NULL){
             fprintf(stderr,"Realloc Failed :: rm_append_word\n");
             exit(-1);
@@ -314,7 +318,7 @@ void rm_ngram_detected(result_manager* obj){
     int i=0;
     if(obj->first_available_slot>=obj->output_bufsize){
         /*first available slot is out of boundries so double output buffer */
-        char* temp = realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
+        char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
         if(temp==NULL){
             fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
             exit(-1);

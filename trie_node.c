@@ -11,7 +11,7 @@ void tn_leaf(trie_node* obj,char* input_word){
     obj->Leaf = true;
     obj->Head = false;
     obj->final = false;
-    obj->Word = malloc(strlen(input_word)+1);
+    obj->Word = (char*)malloc(strlen(input_word)+1);
     if(obj->Word==NULL){
         fprintf(stderr,"Malloc failed in tn_leaf\n");
         exit(-1);
@@ -244,7 +244,7 @@ void ca_double(children_arr* obj){
         fprintf(stderr,"children_arr_double called for a unitialized object\n");
         exit(-1);
     }
-    trie_node* temp = realloc(obj->Array,2*obj->Size*sizeof(trie_node));
+    trie_node* temp = (trie_node*)realloc(obj->Array,2*obj->Size*sizeof(trie_node));
     if(temp==NULL){
         fprintf(stderr,"Realloc Failed\n");
         exit(-1);

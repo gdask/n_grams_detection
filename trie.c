@@ -7,7 +7,7 @@ void trie_init(trie* obj,int init_child_arr_size){
         exit(-1);
     }
     obj->ca_init_size = init_child_arr_size;
-    obj->head = malloc(sizeof(trie_node));
+    obj->head = (trie_node*)malloc(sizeof(trie_node));
     if(obj->head==NULL){
         fprintf(stderr,"Malloc failed in trie init\n");
         exit(-1);
@@ -110,7 +110,7 @@ void pointer_set_init(pointer_set* obj,int init_size){
         fprintf(stderr,"Pointer set init called with < 1 init size\n");
         exit(-1);
     }
-    obj->Array = malloc(init_size*sizeof(void*));
+    obj->Array = (void**)malloc(init_size*sizeof(void*));
     if(obj->Array==NULL){
         fprintf(stderr,"Pointer set init, malloc failed\n");
         exit(-1);
@@ -123,7 +123,7 @@ void pointer_set_fin(pointer_set* obj){
 
 void ps_reuse(pointer_set* obj, int new_size){
     if(obj->Size < new_size){
-        obj->Array = realloc(obj->Array,new_size*2*sizeof(void*));
+        obj->Array = (void**)realloc(obj->Array,new_size*2*sizeof(void*));
         if(obj->Array==NULL){
             fprintf(stderr,"ps resize realloc failed\n");
             exit(-1);
