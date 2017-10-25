@@ -20,8 +20,9 @@ int lm_n_gram_counter(line_manager* obj){
 
 /*Initialise structure query manager
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
-void line_manager_init(line_manager* obj,FILE *fp){
+void line_manager_init(line_manager* obj,FILE *fp, char file_status){
     obj->input=fp;
+    obj->file_status=file_status;
     obj->buffer= malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
         fprintf(stderr,"Malloc failed :: line_manager_init\n");
@@ -63,11 +64,11 @@ bool lm_is_delete(line_manager* obj){
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj, char status){
+bool lm_fetch_line(line_manager* obj){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
 
-    if(status=='Q'){
+    if(obj->file_status=='Q'){
         if(fgets(obj->buffer, obj->bufsize, obj->input)){
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
@@ -94,7 +95,7 @@ bool lm_fetch_line(line_manager* obj, char status){
             //In case of F you just ignore this line and get the next one.
             if(obj->buffer[0]=='F'){
                 //no more tasks to do, IGNORE for now
-                return lm_fetch_line(obj, status);  
+                return lm_fetch_line(obj);  
             }
             /*keep line status, check if ID is valid*/
             obj->line_status=obj->buffer[0];
@@ -124,7 +125,7 @@ bool lm_fetch_line(line_manager* obj, char status){
             return false;
         }
     }
-    else if(status=='I'){
+    else if(obj->file_status=='I'){
         //every line is a ngram
         obj->buffer[0]='A';
         obj->buffer[1]=' ';

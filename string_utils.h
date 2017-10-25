@@ -7,6 +7,7 @@
 
 struct line_manager{
     FILE *input;
+    char file_status;
     char* buffer; //each line from file
     int bufsize;
     char line_status; //buffer[0]:A,Q,D
@@ -20,11 +21,11 @@ struct line_manager{
 
 typedef struct line_manager line_manager;
 //Input manager functions
-void line_manager_init(line_manager* obj,FILE *fp); //Initilize struct
+void line_manager_init(line_manager* obj,FILE *fp, char file_status); //Initilize struct
 void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
 
 //Fetch line gets the next line from file,returns FALSE if there is no next line
-bool lm_fetch_line(line_manager* obj, char status);
+bool lm_fetch_line(line_manager* obj);
 //ex: "hello world re" >> "world re" >> "re" >> RETURN FALSE
 bool lm_fetch_ngram(line_manager* obj);
 //Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS NUll
