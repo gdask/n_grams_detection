@@ -67,11 +67,7 @@ bool lm_is_delete(line_manager* obj){
 bool lm_fetch_line(line_manager* obj){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
-
-    if(obj->buffer==NULL){
-        fprintf(stderr,"Object is not initisialised:: lm_fetch_line\n");
-        exit(-1);
-    }
+    
     if(obj->file_status=='Q'){
         if(fgets(obj->buffer, obj->bufsize, obj->input)){
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
