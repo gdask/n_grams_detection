@@ -15,7 +15,7 @@ int main(){
     //INIT FILE
     line_manager lmin;
     line_manager_init(&lmin,in);
-    bool has_line = lm_fetch_line(&lmin,'I');    
+    bool has_line = lm_fetch_line(&lmin,'I');
     while(has_line==true){
         lm_fetch_ngram(&lmin);
         trie_insert(&db,&lmin);

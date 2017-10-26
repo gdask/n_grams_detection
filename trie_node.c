@@ -347,3 +347,41 @@ void ca_force_delete(children_arr* obj,int goal_index){
     memmove(&obj->Array[goal_index],&obj->Array[goal_index+1],movable);
     obj->First_Available_Slot--;
 }
+
+//That function assumes that is called on an initiliazed object
+//And every trie_node from [0-First_Available_Slot-1] is normal or leaf
+loc_res ca_locate_bin(children_arr* obj,char* input_word){
+    loc_res result;
+    result.index=0;
+    result.found=false;
+    result.node=NULL;
+
+    int lower_bound = 0;
+    int upper_bound = obj->First_Available_Slot-1;
+    int middle = (lower_bound+upper_bound)/2;
+
+    while(lower_bound < upper_bound){
+        int cmp_res = strcmp(obj->Array[middle].Word,input_word);
+        if(cmp_res < 0){
+            lower_bound = middle + 1;
+        }
+        else if(cmp_res > 0){
+            upper_bound = middle - 1;
+        }
+        else{
+            //Array[middle] == input_word
+            break;
+        }
+        middle = (lower_bound+upper_bound)/2;
+    }
+    if(lower_bound > upper_bound){
+        //Input word not in array,should be placed in lower bound,IRENE CHECK
+        result.index=lower_bound;
+    }
+    else{
+        result.index = middle;
+        result.found = true;
+        result.node = &Array[middle];
+    }
+    return result;
+}
