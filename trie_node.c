@@ -88,31 +88,6 @@ void tn_fin(trie_node* obj){
     }
 }
 
-int tn_compare(trie_node* obj,char* input_word){
-    if(tn_is_leaf(obj)==false && tn_is_normal(obj)==false){
-        fprintf(stderr,"tn_compare called on false object\n");
-        tn_print_subtree(obj);
-        exit(-1);
-    }
-    return strcmp(obj->Word,input_word);
-}
-
-int tn_lookup_index(trie_node* obj,char* input_word){
-    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
-        fprintf(stderr,"tn lookup called on a non valid trie_node object");
-        exit(-1);
-    }
-    if(tn_is_leaf(obj)==true){
-        //Leaf has no childern
-        return -1;
-    }
-    int possible_index = ca_locate_index(&obj->next,input_word);
-    if(ca_word_exists(&obj->next,input_word,possible_index)==true){
-        //Using ca_ function protect us from possible illegal mem access.
-        return possible_index;
-    }
-    return -1;
-}
 
 trie_node* tn_lookup(trie_node* obj,char* input_word){
     if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
@@ -123,7 +98,8 @@ trie_node* tn_lookup(trie_node* obj,char* input_word){
         //Leaf has no childern
         return NULL;
     }
-    return ca_get_pointer(&obj->next,tn_lookup_index(obj,input_word));
+    loc_res result = ca_locate_bin(&obj->next,input_word);
+    return result.node_ptr;
 }
 
 trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
@@ -134,16 +110,16 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     if(tn_is_leaf(obj)==true){
         tn_leaf_to_normal(obj,init_child_size);
         ca_force_append(&obj->next,input_word,0);
-        return ca_get_pointer(&obj->next,0);
+        return &obj->next.Array[0];
     }
     //Search in children
-    int possible_index = ca_locate_index(&obj->next,input_word);
-    if(ca_word_exists(&obj->next,input_word,possible_index)==true){
-        return ca_get_pointer(&obj->next,possible_index);
+    loc_res result = ca_locate_bin(&obj->next,input_word);
+    if(result.found==true){
+        return result.node_ptr;
     }
     else{
-        ca_force_append(&obj->next,input_word,possible_index);
-        return ca_get_pointer(&obj->next,possible_index);
+        ca_force_append(&obj->next,input_word,result.index);
+        return &obj->next.Array[result.index];
     }
 }
 
@@ -162,15 +138,16 @@ void tn_unset_final(trie_node* obj){
     }
     obj->final=false;
 }
-
+/* A node has fork when has 2 or more entries, or if it has at least one child & is a final n_gram
+*/
 bool tn_has_fork(trie_node* obj){
     if(tn_is_leaf(obj)==true){
         return false;
     }
-    if(obj->next.First_Available_Slot < 2){
-        return false;
+    if(obj->next.First_Available_Slot > 1 || (obj->next.First_Available_Slot==1 && obj->final==true)){
+        return true;
     }
-    return true;
+    return false;
 }
 
 bool tn_has_child(trie_node* obj){
@@ -253,36 +230,6 @@ void ca_double(children_arr* obj){
     obj->Size = obj->Size*2;
 }
 
-//ca_locate must implement a binary search later
-int ca_locate_index(children_arr *obj,char *input_word){
-    if(obj->Initialized==false){
-        fprintf(stderr,"ca_locate called on a unitialized object\n");
-        exit(-1);
-    }
-    int i,goal_index=0;
-    for(i=0;i<obj->First_Available_Slot;i++){
-        if(tn_compare(&obj->Array[i],input_word)>=0){
-            break;
-        }
-        goal_index++;
-    }
-    return goal_index;
-}
-
-bool ca_word_exists(children_arr* obj,char* input_word,int goal_index){
-    if(obj->Initialized==false){
-        fprintf(stderr,"ca_word_exists called on a unitialized object\n");
-        exit(-1);
-    }
-    if(goal_index>=obj->First_Available_Slot){
-        return false;
-    }
-    if(tn_compare(&obj->Array[goal_index],input_word)==0){
-        return true;
-    }
-    return false;
-}
-
 void ca_force_append(children_arr* obj,char* input_word,int goal_index){
     if(obj->Initialized==false){
         fprintf(stderr,"ca_force_append called on a unitialized object\n");
@@ -308,29 +255,16 @@ void ca_force_append(children_arr* obj,char* input_word,int goal_index){
     tn_leaf(&obj->Array[goal_index],input_word);
 }
 
-trie_node* ca_get_pointer(children_arr* obj,int goal_index){
-    if(obj->Initialized==false){
-        //return NULL;
-        fprintf(stderr,"ca_get_pointer called on an uninitialized object\n");
-        exit(-1);
-    }
-    if(goal_index < 0){
-        return NULL;
-    }
-    if(goal_index < obj->First_Available_Slot){
-        return &obj->Array[goal_index];
-    }
-    return NULL;
-}
-
 void ca_force_delete(children_arr* obj,int goal_index){
     if(obj->Initialized==false){
         fprintf(stderr,"ca_force_delete called on an uninitialized object at %p\n",obj);
         exit(-1);
+        //return;
     }
     if(goal_index >= obj->First_Available_Slot || goal_index < 0){
         fprintf(stderr,"ca_force_delete called with out of bounds goal_index ,FAS: %d ,%d\n",goal_index,obj->First_Available_Slot);
         exit(-1);
+        //return;
     }
     if(goal_index == obj->First_Available_Slot-1){
         tn_fin(&obj->Array[goal_index]);
@@ -338,8 +272,6 @@ void ca_force_delete(children_arr* obj,int goal_index){
         return;
     }
     trie_node* temp = &obj->Array[goal_index];
-    //fprintf(stderr,"subtree to be fin: %p\n",temp);
-    //tn_print_subtree(temp);
     tn_fin(temp);
     //free(temp);
 
@@ -354,13 +286,18 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     loc_res result;
     result.index=0;
     result.found=false;
-    result.node=NULL;
+    result.node_ptr=NULL;
+
+    if(obj->Initialized==false){
+        fprintf(stderr,"ca_locate_bin called on unitialized object");
+        return result;
+    }
 
     int lower_bound = 0;
     int upper_bound = obj->First_Available_Slot-1;
     int middle = (lower_bound+upper_bound)/2;
 
-    while(lower_bound < upper_bound){
+    while(lower_bound <= upper_bound){
         int cmp_res = strcmp(obj->Array[middle].Word,input_word);
         if(cmp_res < 0){
             lower_bound = middle + 1;
@@ -370,18 +307,14 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
         }
         else{
             //Array[middle] == input_word
-            break;
+            result.index = middle;
+            result.found = true;
+            result.node_ptr = &obj->Array[middle];
+            return result;
         }
         middle = (lower_bound+upper_bound)/2;
     }
-    if(lower_bound > upper_bound){
-        //Input word not in array,should be placed in lower bound,IRENE CHECK
-        result.index=lower_bound;
-    }
-    else{
-        result.index = middle;
-        result.found = true;
-        result.node = &Array[middle];
-    }
+    //Input word not in array,should be placed in lower bound,IRENE CHECK
+    result.index=lower_bound;
     return result;
 }

@@ -41,40 +41,44 @@ void trie_insert(trie* obj,line_manager* lm){
     }
 }
 
-void trie_delete(trie* obj,line_manager* lm){
+bool trie_delete(trie* obj,line_manager* lm){
     char* current_word = lm_fetch_word(lm);
     if(current_word==NULL){
-        return;
+        return false;
     }
 
-    trie_node* current_node = obj->head;
-    int current_index=-1;
+    loc_res current;
+    current.node_ptr = obj->head;
+
     trie_node* last_fork = obj->head;
-    int critical_index= tn_lookup_index(current_node,current_word);
+    int critical_index = -1;
+    bool get_critical_index = true;
 
     while(current_word!=NULL){
-        current_index = tn_lookup_index(current_node,current_word);
-        if(current_index < 0){
+        current = ca_locate_bin(&current.node_ptr->next,current_word);
+        if(current.found == false){
             //N_gram didnt found,nothing changes in trie
-            return;
+            return false;
         }
-        if(tn_has_fork(current_node)==true || (current_node->final==true && tn_has_child(current_node)==true)){
-            last_fork = current_node;
-            critical_index = current_index;
+        if(get_critical_index==true){
+            critical_index = current.index;
+            get_critical_index=false;
         }
-        current_node = ca_get_pointer(&current_node->next,current_index);
+        if(tn_has_fork(current.node_ptr)==true){
+            last_fork = current.node_ptr;
+            get_critical_index=true;
+        }
         current_word = lm_fetch_word(lm);
     }
 
-    if(tn_has_child(current_node)==true){
-        tn_unset_final(current_node);
+    if(tn_has_child(current.node_ptr)==true){
+        tn_unset_final(current.node_ptr);
     }
     else{
         //deletes entire path from last_fork to leaf
         ca_force_delete(&last_fork->next,critical_index);
-        //if(last_fork!=obj->head && tn_has_fork(last_fork)==false)tn_normal_to_leaf(last_fork);
     }
-
+    return true;
 }
 
 void trie_search(trie* obj,line_manager* lm,result_manager* rm){
