@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/eirini/project/n_grams_detection/unit_tests/tests.cpp
+string_utils.c
+/home/eirini/project/n_grams_detection/unit_tests/string_utils.c
+trie_node.c
+/home/eirini/project/n_grams_detection/unit_tests/trie_node.c
+trie.c
+/home/eirini/project/n_grams_detection/unit_tests/trie.c
+gtest/gtest.h
+-
+
