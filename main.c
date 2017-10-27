@@ -9,9 +9,13 @@ int main(){
     trie db;
     trie_init(&db,5);
     FILE *fp,*re,*in;
-    in=fopen("test.init","r");
-    fp=fopen("commands.txt","r");
+    in=fopen("small/small.init","r");
+    fp=fopen("small/small.work","r");
     re=fopen("query_res.txt","w");
+    if(in==NULL || fp==NULL ||re==NULL){
+        fprintf(stderr, "Some file didn't open");
+        exit(-1);
+    }
     bool has_line;
     //INIT FILE
     line_manager lmin;
@@ -40,6 +44,7 @@ int main(){
         }
         else if(lm_is_query(&lm)==true){
             trie_search(&db,&lm,&rm);
+            break;
         }
         else{
             fprintf(stderr,"Corrupted line\n");
