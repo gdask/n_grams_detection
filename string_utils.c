@@ -87,7 +87,7 @@ bool lm_fetch_line(line_manager* obj){
                 obj->bufsize=2*obj->bufsize;
                 fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
             }
-            printf("Line read:%s", obj->buffer);
+            //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;
@@ -147,7 +147,7 @@ bool lm_fetch_line(line_manager* obj){
                 obj->bufsize=2*obj->bufsize;
                 fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
             }
-            printf("Line read:%s", obj->buffer);
+           //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;
@@ -298,6 +298,7 @@ void rm_append_word(result_manager* obj,char* word){
         obj->word_buffer=temp;
         obj->bufsize= 2*obj->bufsize*sizeof(char*);
     }
+    printf("new word is: %s\n", word);
     obj->word_buffer[i]= word;
     obj->current_word_index=i;
     return;
@@ -305,6 +306,7 @@ void rm_append_word(result_manager* obj,char* word){
 
 /*This word is not a ngram, so i "clean" word_buffer*/
 void rm_ngram_undetected(result_manager* obj){
+    
     memset(obj->word_buffer, 0, obj->bufsize);
     /*make all buffer \0*/
     obj->current_word_index=-1;
@@ -323,7 +325,7 @@ void rm_ngram_detected(result_manager* obj){
         /*check if it fits*/
         n_gram_len=strlen(obj->current_ngram)+1; //i dont need |
         if(n_gram_len+occupied_slots>=obj->output_bufsize){
-            printf("made realloc n_gram\n");
+            //printf("made realloc n_gram\n");
             char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
             if(temp==NULL){
                 fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
@@ -368,7 +370,7 @@ void rm_ngram_detected(result_manager* obj){
         i++;
     }
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
-    //printf("Current ngram:%s\n",obj->current_ngram);
+    //printf("Detected ngram:%s\n",obj->current_ngram);
     /*clean word buffer*/
     memset(obj->word_buffer, 0, obj->bufsize);
     obj->current_word_index=-1;
