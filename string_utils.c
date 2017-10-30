@@ -88,7 +88,7 @@ bool lm_fetch_line(line_manager* obj){
                 obj->bufsize=2*obj->bufsize;
                 fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
             }
-            printf("Line read:%s", obj->buffer);
+            //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;
@@ -148,7 +148,7 @@ bool lm_fetch_line(line_manager* obj){
                 obj->bufsize=2*obj->bufsize;
                 fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
             }
-            printf("Line read:%s", obj->buffer);
+            //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;
@@ -200,7 +200,7 @@ bool lm_fetch_ngram(line_manager* obj){
     }
     obj->word_start=NULL;
     obj->word_position=obj->n_gram_position;
-    printf("Ngram first word is%s\n", &obj->buffer[obj->n_gram_position]);
+    //printf("Ngram first word is%s\n", &obj->buffer[obj->n_gram_position]);
     return true; //no more n grams
 }
 
@@ -339,7 +339,7 @@ void rm_ngram_detected(result_manager* obj){
         obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
     }
     while(obj->word_buffer[i]!='\0'){
-        printf("%s\n",obj->word_buffer[i]);
+        //printf("%s\n",obj->word_buffer[i]);
         /*find and copy to first available slot in output_buffer*/
         strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
         strcat(&obj->output_buffer[obj->first_available_slot], " ");
@@ -348,7 +348,7 @@ void rm_ngram_detected(result_manager* obj){
         i++;
     }
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
-    printf("Current ngram:%s\n",obj->current_ngram);
+    //printf("Current ngram:%s\n",obj->current_ngram);
     /*clean word buffer*/
     memset(obj->word_buffer, 0, obj->bufsize);
     obj->current_word_index=-1;

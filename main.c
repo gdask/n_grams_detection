@@ -1,17 +1,26 @@
 #include <stdio.h>
 #include <string.h>
-#include "stdlib.h"
+#include <stdlib.h>
+#include <time.h>
 #include "trie_node.h"
 #include "string_utils.h"
 #include "trie.h"
 
 int main(){
+    clock_t start,end;
+    start = clock();
+
     trie db;
     trie_init(&db,5);
     FILE *fp,*re,*in;
-    in=fopen("test.init","r");
-    fp=fopen("commands.txt","r");
+    in=fopen("small.init","r");
+    fp=fopen("small.work","r");
     re=fopen("query_res.txt","w");
+
+    //setvbuf (in,NULL,_IONBF,0);
+    //setvbuf (fp,NULL,_IONBF,0);
+    //setvbuf (re,NULL,_IONBF,0);
+
     bool has_line;
     //INIT FILE
     line_manager lmin;
@@ -56,5 +65,9 @@ int main(){
     fclose(re);
     fclose(in);
     trie_fin(&db);
+
+    end=clock();
+    printf("Elapsed time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
+
     return 0;
 }
