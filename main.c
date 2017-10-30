@@ -13,14 +13,13 @@ int main(){
     trie db;
     trie_init(&db,5);
     FILE *fp,*re,*in;
-    in=fopen("small.init","r");
-    fp=fopen("small.work","r");
+    in=fopen("small/small.init","r");
+    fp=fopen("small/small.work","r");
     re=fopen("query_res.txt","w");
-
-    //setvbuf (in,NULL,_IONBF,0);
-    //setvbuf (fp,NULL,_IONBF,0);
-    //setvbuf (re,NULL,_IONBF,0);
-
+    if(in==NULL || fp==NULL ||re==NULL){
+        fprintf(stderr, "Some file didn't open");
+        exit(-1);
+    }
     bool has_line;
     //INIT FILE
     line_manager lmin;
@@ -31,6 +30,8 @@ int main(){
         trie_insert(&db,&lmin);
         has_line= lm_fetch_line(&lmin);
     }
+
+    //tn_print_subtree(db.head);
 
     line_manager lm;
     line_manager_init(&lm,fp,'Q');
