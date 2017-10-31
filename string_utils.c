@@ -176,7 +176,7 @@ bool lm_fetch_line(line_manager* obj){
         obj->n_gram_position= 0;
         return true;
     }
-    //return false;   
+    return false;   
 }
 
 /*each time that fetch_ngram is called, i modify my obj->Buffer with one word less.
@@ -220,6 +220,7 @@ char* lm_fetch_word(line_manager* obj){
     while(obj->buffer[i]=='\0' && i<obj->line_end){
         i++;
     }
+
     if(i>=obj->line_end){
         obj->word_start=NULL;
         obj->word_position=0;
@@ -299,7 +300,7 @@ void rm_append_word(result_manager* obj,char* word){
         obj->word_buffer=temp;
         obj->bufsize= 2*obj->bufsize*sizeof(char*);
     }
-    printf("new word is: %s\n", word);
+    //printf("new word is: %s\n", word);
     obj->word_buffer[i]= word;
     obj->current_word_index=i;
     return;
@@ -311,7 +312,7 @@ void rm_ngram_undetected(result_manager* obj){
     memset(obj->word_buffer, 0, obj->bufsize);
     /*make all buffer \0*/
     obj->current_word_index=-1;
-    printf("Undetected\n");
+    //printf("Undetected\n");
     return;
 }
 
@@ -374,14 +375,13 @@ void rm_ngram_detected(result_manager* obj){
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
     //printf("Detected ngram:%s\n",obj->current_ngram);
     /*clean word buffer*/
-    printf("Detected\n");
+    //printf("Detected\n");
     memset(obj->word_buffer, 0, obj->bufsize);
     obj->current_word_index=-1;
 }
 
 /*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
 void rm_completed(result_manager* obj){
-    int i;
     if(obj->first_available_slot==0){ //no ngram detected
         fprintf(obj->output,"-1\n");
     }    

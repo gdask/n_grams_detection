@@ -91,7 +91,6 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm){
         trie_node* current_node = obj->head;
         char* current_word = lm_fetch_word(lm);
         while(current_word!=NULL){
-            printf("Trie search : %s\n", current_word);
             current_node = tn_lookup(current_node,current_word);
             if(current_node==NULL){
                 rm_ngram_undetected(rm);
