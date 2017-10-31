@@ -6,6 +6,62 @@
 #include"trie.c"
 #include <gtest/gtest.h>
  
+TEST(CaseA, BigLine){
+    line_manager lm;
+    FILE* in;
+    in=stdin;
+    line_manager_init(&lm, in, 'I');
+    printf("please give a really big sentence\n");
+    ASSERT_EQ(true,lm_fetch_line(&lm));
+    line_manager_fin(&lm);
+}
+
+/*Asked for invalid task px delete as DELETE*/
+/*TEST(CaseB, InvalidTask){
+    line_manager lm;
+    FILE* in;
+    in=stdin;
+    printf("please give a query which is not started by A/Q/D, as DELETE bla bla \n");
+    line_manager_init(&lm, in, 'Q');
+    ASSERT_EQ(false,lm_fetch_line(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}*/
+
+/*TEST(CaseC, EmptyQuery){
+    line_manager lm;
+    FILE* in;
+    in=stdin;
+    printf("please give a query which starts by A/Q/D and nothing more \n");
+    line_manager_init(&lm, in, 'Q');
+    ASSERT_EQ(false, lm_fetch_line(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}*/
+
+/*TEST(CaseC, EmptyNgrams){
+    line_manager lm;
+    FILE* in;
+    in=stdin;
+    printf("please give a empty ngram(multiple spaces) \n");
+    line_manager_init(&lm, in, 'I');
+    ASSERT_EQ(false, lm_fetch_line(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}*/
+
+TEST(DeleteNgram, SearchAfter){
+
+}
+
+TEST(DeleteNgramThatexistsMultipleTimes, SearchAfter){
+
+}
+
+TEST(AddDeleteSearch, TheSameNgram){
+    
+}
+/*
 
 TEST(CompletePhrase, IsANotphrase){
     ASSERT_EQ(false, complete_phrase("this is a"));
@@ -35,19 +91,7 @@ TEST(Fetchline, WrongInput){
     fclose(in);
 }
 
-
-/*This test has no point, is to show you how to use exit assert*/
-TEST(Fetchline, Unitisializedbuf){
-    line_manager lm;
-    FILE* in;
-    in=fopen("commands.txt","r");
-    //line_manager_init(&lm, in, 'Q');
-    //expected code is -1 but in our system -1 is 255
-    ASSERT_EXIT(lm_fetch_line(&lm), ::testing::ExitedWithCode(255),"Object is not initisialised:: lm_fetch_line\n");
-    line_manager_fin(&lm);
-    fclose(in);
-}
-
+*/
 TEST(FetchNgram, ALLGOOD){
     line_manager lm;
     FILE* in;

@@ -10,6 +10,13 @@ struct children_arr;
 typedef struct trie_node trie_node;
 typedef struct children_arr children_arr;
 
+struct locate_result{
+	int index;
+	bool found;
+	trie_node* node_ptr;
+};
+typedef struct locate_result loc_res;
+
 //children has an array that contain pointers to trie nodes in alphabetical order.
 //Array size starts with Init_Size and doubles everytime the array is full.
 struct children_arr{
@@ -23,20 +30,13 @@ void ca_init(children_arr* obj,int init_size);
 void ca_fin(children_arr* obj);
 void ca_double(children_arr* obj);
 
-//forward: [goal_index,First_Avail]=>[goal_index+1,First_Avail+1]
-//backward: [goal_index,First_Avail]=>[goal_index-1,First_Avail-1]
-//void ca_shift_entries(children_arr* obj,int goal_index,bool forward);
 
-//locate index returns where the input word should be placed or where is currently placed.
-int ca_locate_index(children_arr* obj,char* input_word);
-//After locate index we should check if the word already exists in goal_index
-bool ca_word_exists(children_arr* obj,char* input_word,int goal_index);
-//If not,we need to place it with force_append.
+//Places at goal index a new leaf with input word. Shifts right existing entries if needed
 void ca_force_append(children_arr* obj,char* input_word,int goal_index);
-//Removes Array[goal_index]
+//Removes Array[goal_index] from goal index. Shifts left existing entries if needed.
 void ca_force_delete(children_arr* obj,int goal_index);
-//Returns trie_node* of goal_index or NULL
-trie_node* ca_get_pointer(children_arr* obj,int goal_index);
+//Binary search on childern array,returns a locate_result struct.
+loc_res ca_locate_bin(children_arr* obj,char* input_word);
 
 struct trie_node {
 	//bool Initialized;
@@ -69,9 +69,6 @@ void tn_normal_to_leaf(trie_node* obj);
 bool tn_is_leaf(trie_node* obj);
 bool tn_is_normal(trie_node* obj);
 bool tn_is_head(trie_node* obj);
-//Internal query functions
-int	tn_compare(trie_node* obj,char* input_word);
-int	tn_lookup_index(trie_node* obj,char* input_word);
 //Debug purpose printing function
 void tn_print_subtree(trie_node* obj);
 

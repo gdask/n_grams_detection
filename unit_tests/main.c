@@ -1,21 +1,30 @@
 #include <stdio.h>
 #include <string.h>
-#include "stdlib.h"
+#include <stdlib.h>
+#include <time.h>
 #include "trie_node.h"
 #include "string_utils.h"
 #include "trie.h"
 
 int main(){
+    clock_t start,end;
+    start = clock();
+
     trie db;
     trie_init(&db,5);
     FILE *fp,*re,*in;
-    in=fopen("test.init","r");
-    fp=fopen("test.work","r");
+    in=fopen("small/small.init","r");
+    fp=fopen("small/small.work","r");
     re=fopen("query_res.txt","w");
+    if(in==NULL || fp==NULL ||re==NULL){
+        fprintf(stderr, "Some file didn't open");
+        exit(-1);
+    }
+    bool has_line;
     //INIT FILE
     line_manager lmin;
     line_manager_init(&lmin,in, 'I');
-    bool has_line = lm_fetch_line(&lmin);    
+    has_line = lm_fetch_line(&lmin);    
     while(has_line==true){
         lm_fetch_ngram(&lmin);
         trie_insert(&db,&lmin);
@@ -30,9 +39,6 @@ int main(){
     result_manager_init(&rm,re);
     //QUERY FILE
     has_line=lm_fetch_line(&lm);
-    //int n_grams=0;
-    //n_grams=lm_n_gram_counter(&lm);
-    //printf("has %d\n",n_grams);
     while(has_line==true){
         if(lm_is_insert(&lm)==true){
             lm_fetch_ngram(&lm);
@@ -48,9 +54,10 @@ int main(){
         else{
             fprintf(stderr,"Corrupted line\n");
         }
-        //tn_print_subtree(db.head);
         has_line=lm_fetch_line(&lm);
     }
+
+    //tn_print_subtree(db.head);
 
     line_manager_fin(&lm);
     line_manager_fin(&lmin);
@@ -59,5 +66,9 @@ int main(){
     fclose(re);
     fclose(in);
     trie_fin(&db);
+
+    end=clock();
+    printf("Elapsed time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
+
     return 0;
 }
