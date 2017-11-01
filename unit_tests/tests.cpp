@@ -62,23 +62,34 @@ TEST(DeleteNgram, SearchAfter){
     trie_init(&db,5);
     result_manager rm;
     result_manager_init(&rm, out);
-
-    //add
-    lm_fetch_line(&lm);
-    trie_insert(&db, &lm);
-
-    //delete
-    lm_fetch_line(&lm);
-    trie_delete(&db, &lm);
-
-    //Search
-    lm_fetch_line(&lm);
-    trie_search(&db, &lm, &rm);
+    bool has_line;
+    has_line=lm_fetch_line(&lm);
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
+        }
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm);
+    }
 
     char buffer[100];
     int size=100;
-    fgets(buffer, size, out);
-    EXPECT_EQ("-1\n", buffer);
+    fseek(out, 0, SEEK_SET);
+    if(fgets(buffer, size, out)){
+        int r;
+        r=strcmp("-1\n", buffer);
+        EXPECT_EQ(0, r);
+    }
 
     trie_fin(&db);
     result_manager_fin(&rm);
