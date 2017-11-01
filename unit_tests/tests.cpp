@@ -5,16 +5,18 @@
 #include "trie_node.c"
 #include"trie.c"
 #include <gtest/gtest.h>
+#include <string>
  
+/*
 TEST(CaseA, BigLine){
     line_manager lm;
     FILE* in;
-    in=stdin;
+    in=fopen("input/BigLine", "r");
     line_manager_init(&lm, in, 'I');
-    printf("please give a really big sentence\n");
-    ASSERT_EQ(true,lm_fetch_line(&lm));
+    ASSERT_EQ(true, lm_fetch_line(&lm));
     line_manager_fin(&lm);
-}
+    fclose(in);
+}*/
 
 /*Asked for invalid task px delete as DELETE*/
 /*TEST(CaseB, InvalidTask){
@@ -51,16 +53,49 @@ TEST(CaseA, BigLine){
 }*/
 
 TEST(DeleteNgram, SearchAfter){
+    line_manager lm;
+    FILE* in, *out;
+    in=fopen("input/DeleteNgramTest", "r");
+    out=fopen("output/DeleteNgramTest", "w+");
+    line_manager_init(&lm, in, 'Q');
+    trie db;
+    trie_init(&db,5);
+    result_manager rm;
+    result_manager_init(&rm, out);
+
+    //add
+    lm_fetch_line(&lm);
+    trie_insert(&db, &lm);
+
+    //delete
+    lm_fetch_line(&lm);
+    trie_delete(&db, &lm);
+
+    //Search
+    lm_fetch_line(&lm);
+    trie_search(&db, &lm, &rm);
+
+    char buffer[100];
+    int size=100;
+    fgets(buffer, size, out);
+    EXPECT_EQ("-1\n", buffer);
+
+    trie_fin(&db);
+    result_manager_fin(&rm);
+    line_manager_fin(&lm);
+    fclose(in);
+    fclose(out);
 
 }
 
+/*
 TEST(DeleteNgramThatexistsMultipleTimes, SearchAfter){
 
 }
 
 TEST(AddDeleteSearch, TheSameNgram){
-    
-}
+
+}*/
 /*
 
 TEST(CompletePhrase, IsANotphrase){
@@ -92,53 +127,7 @@ TEST(Fetchline, WrongInput){
 }
 
 */
-TEST(FetchNgram, ALLGOOD){
-    line_manager lm;
-    FILE* in;
-    in=fopen("test.work","r");
-    line_manager_init(&lm, in, 'Q');
-    lm_fetch_line(&lm);
-    ASSERT_EQ(true ,lm_fetch_ngram(&lm));
-    line_manager_fin(&lm);
-    //printf("allgood");
-    fclose(in);
-}
 
-TEST(FetchNgram, NoLine){
-    line_manager lm;
-    FILE* in;
-    in=fopen("test.work","r");
-    line_manager_init(&lm, in, 'Q');
-    //lm_fetch_line(&lm);
-    ASSERT_EQ(false ,lm_fetch_ngram(&lm));
-    line_manager_fin(&lm);
-    fclose(in);
-}
-
-TEST(ISQUERY, YES){
-    line_manager lm;
-    FILE* in;
-    in=fopen("test.work","r");
-    line_manager_init(&lm, in, 'Q');
-    lm_fetch_line(&lm);
-    lm_fetch_ngram(&lm);
-    ASSERT_EQ(true ,lm_is_query(&lm));
-    line_manager_fin(&lm);
-    fclose(in);
-}
-
-TEST(ISQUERY, NO){
-    line_manager lm;
-    FILE* in;
-    in=fopen("test.work","r");
-    line_manager_init(&lm, in, 'Q');
-    lm_fetch_line(&lm);
-    lm_fetch_line(&lm);
-    lm_fetch_line(&lm);
-    ASSERT_EQ(false ,lm_is_query(&lm));
-    line_manager_fin(&lm);
-    fclose(in);
-}
 
 /*GEORGE*/
 /*TEST(InsertToTree, Allgood){
