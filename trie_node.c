@@ -18,7 +18,6 @@ void tn_leaf(trie_node* obj,char* input_word){
     }
     strcpy(obj->Word,input_word);
     obj->next.Initialized = false;
-    //fprintf(stderr,"Tn_leaf init\n");
 }
 
 void tn_normal(trie_node* obj,int init_child_size,char* input_word){
@@ -37,26 +36,28 @@ void tn_head(trie_node* obj,int init_child_size){
 }
 
 void tn_leaf_to_normal(trie_node* obj,int init_child_size){
+    #if DEBUG != 0
     if(tn_is_leaf(obj)!=true){
         fprintf(stderr,"tn_leaf_to_normal called on a non leaf object\n");
         exit(-1);
     }
+    #endif
     ca_init(&obj->next,init_child_size);
     obj->Leaf=false;
 }
 
 void tn_normal_to_leaf(trie_node* obj){
+    #if DEBUG != 0
     if(tn_is_normal(obj)!=true){
         fprintf(stderr,"tn_normal_to_leaf called on a non tn_normal object\n");
-        //tn_print_subtree(obj);
         exit(-1);
     }
+    #endif
     ca_fin(&obj->next);
     obj->Leaf=true;
 }
 
 bool tn_is_leaf(trie_node* obj){
-    //if(obj->Leaf==true) return true;
     if(obj->Leaf==true && obj->Head==false && obj->next.Initialized==false){
         return true;
     }
@@ -64,7 +65,6 @@ bool tn_is_leaf(trie_node* obj){
 }
 
 bool tn_is_normal(trie_node* obj){
-    //if(obj->Leaf==false && obj->Head==false) return true;
     if(obj->Leaf==false && obj->Head==false && obj->next.Initialized==true){
         return true;
     }
@@ -79,7 +79,6 @@ bool tn_is_head(trie_node* obj){
 }
 
 void tn_fin(trie_node* obj){
-    //fprintf(stderr,"Trie_Node fin\n");
     if(obj->Word!=NULL){
         free(obj->Word);
     }
@@ -90,10 +89,12 @@ void tn_fin(trie_node* obj){
 
 
 trie_node* tn_lookup(trie_node* obj,char* input_word){
+    #if DEBUG != 0
     if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
         fprintf(stderr,"tn lookup called on a non valid trie_node object");
         exit(-1);
     }
+    #endif
     if(tn_is_leaf(obj)==true){
         //Leaf has no childern
         return NULL;
@@ -103,10 +104,12 @@ trie_node* tn_lookup(trie_node* obj,char* input_word){
 }
 
 trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
+    #if DEBUG != 0
     if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
         fprintf(stderr,"tn insert called on a non valid trie_node object");
         exit(-1);
     }
+    #endif
     if(tn_is_leaf(obj)==true){
         tn_leaf_to_normal(obj,init_child_size);
         ca_force_append(&obj->next,input_word,0);
@@ -124,18 +127,22 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
 }
 
 void tn_set_final(trie_node* obj){
+    #if DEBUG != 0
     if(tn_is_head(obj)==true){
         fprintf(stderr,"tn_is_head called on a head trie node\n");
         exit(-1);
     }
+    #endif
     obj->final=true;
 }
 
 void tn_unset_final(trie_node* obj){
+    #if DEBUG != 0
     if(tn_is_head(obj)==true){
         fprintf(stderr,"tn_is_head called on a head trie node\n");
         exit(-1);
     }
+    #endif
     obj->final=false;
 }
 /* A node has fork when has 2 or more entries, or if it has at least one child & is a final n_gram
@@ -185,6 +192,7 @@ void tn_print_subtree(trie_node* obj){
 
 
 void ca_init(children_arr* obj,int init_size){
+    #if DEBUG != 0
     if(init_size==0){
         fprintf(stderr,"children_arr_size called with 0 init_size\n");
         exit(-1);
@@ -193,6 +201,7 @@ void ca_init(children_arr* obj,int init_size){
         fprintf(stderr,"children_arr called on an already initialized object\n");
         exit(-1);
     }
+    #endif
     obj->Array = (trie_node*)malloc(init_size*sizeof(trie_node));
     if(obj->Array==NULL){
         fprintf(stderr,"Malloc Failed\n");
@@ -205,7 +214,6 @@ void ca_init(children_arr* obj,int init_size){
 
 void ca_fin(children_arr* obj){
     if(obj->Initialized == true){
-        //fprintf(stderr,"Children_arr fin\n");
         int i;
         for(i=0;i<obj->First_Available_Slot;i++){
             tn_fin(&obj->Array[i]);
@@ -217,10 +225,12 @@ void ca_fin(children_arr* obj){
 }
 
 void ca_double(children_arr* obj){
+    #if DEBUG != 0
     if(obj->Initialized==false){
         fprintf(stderr,"children_arr_double called for a unitialized object\n");
         exit(-1);
     }
+    #endif
     trie_node* temp = (trie_node*)realloc(obj->Array,2*obj->Size*sizeof(trie_node));
     if(temp==NULL){
         fprintf(stderr,"Realloc Failed\n");
@@ -231,10 +241,12 @@ void ca_double(children_arr* obj){
 }
 
 void ca_force_append(children_arr* obj,char* input_word,int goal_index){
+    #if DEBUG != 0
     if(obj->Initialized==false){
         fprintf(stderr,"ca_force_append called on a unitialized object\n");
         exit(-1);
     }
+    #endif
     if(goal_index == obj->Size || obj->First_Available_Slot == obj->Size){
         ca_double(obj); 
     }
@@ -256,6 +268,7 @@ void ca_force_append(children_arr* obj,char* input_word,int goal_index){
 }
 
 void ca_force_delete(children_arr* obj,int goal_index){
+    #if DEBUG != 0
     if(obj->Initialized==false){
         fprintf(stderr,"ca_force_delete called on an uninitialized object at %p\n",obj);
         exit(-1);
@@ -266,6 +279,7 @@ void ca_force_delete(children_arr* obj,int goal_index){
         exit(-1);
         //return;
     }
+    #endif
     if(goal_index == obj->First_Available_Slot-1){
         tn_fin(&obj->Array[goal_index]);
         obj->First_Available_Slot--;
@@ -289,7 +303,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     result.node_ptr=NULL;
 
     if(obj->Initialized==false){
-        fprintf(stderr,"ca_locate_bin called on unitialized object");
+        //fprintf(stderr,"ca_locate_bin called on unitialized object");
         return result;
     }
 
