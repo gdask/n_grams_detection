@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #define INIT_SIZE 2
+#define DEBUG 0
 
 struct trie_node;
 struct children_arr;
