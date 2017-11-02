@@ -37,7 +37,13 @@ string_utils.h/.c:
         -rm_undetected: discard everything in char** buffer
         -rm_complete: give output_buffer to output file. If it is empty write -1.
 
-Elapsed time without optimization: 3.913862
-Elapsed time with:2.378355
+
+i7 @ 1,8 ghz & hdd:
+Elapsed time without optimization: 3.913862 sec
+Elapsed time with O3 optimization: 2.378355 sec
+
+i5 @ 2,4 ghz & ssd:
+Elapsed time without optimization: 1.913981 sec
+Elapses time with O3 optimization: 1.291364 sec
 
     
