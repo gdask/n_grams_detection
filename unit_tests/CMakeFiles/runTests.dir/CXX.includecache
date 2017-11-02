@@ -31,6 +31,8 @@ trie.c
 /home/eirini/project/n_grams_detection/unit_tests/trie.c
 gtest/gtest.h
 -
+string
+-
 
 /home/eirini/project/n_grams_detection/unit_tests/trie.c
 trie.h

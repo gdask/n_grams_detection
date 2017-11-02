@@ -94,7 +94,7 @@ TEST(Spaces, MultipleSpaces){
     fseek(out, 0, SEEK_SET);
     if(fgets(buffer, size, out)){
         int r;
-        r=strcmp("s s|s s s\n", buffer);
+        r=strcmp("s s s\n", buffer);
         EXPECT_EQ(0, r);
     }
 
@@ -246,16 +246,6 @@ TEST(AddDeleteSearch, TheSameNgram){
     fclose(out);
 }
 
-/*
-
-TEST(CompletePhrase, IsANotphrase){
-    EXPECT_EQ(false, complete_phrase("this is a"));
-}
-
-TEST(CompletePhrase, IsAphrase){
-    EXPECT_EQ(true, complete_phrase("this is a\n"));
-}
-
 TEST(Fetchline, ALLGOOD){
     line_manager lm;
     FILE* in;
@@ -276,18 +266,233 @@ TEST(Fetchline, WrongInput){
     fclose(in);
 }
 
-*/
-
-
-/*GEORGE*/
-/*TEST(InsertToTree, Allgood){
+TEST(FetchNgram, NoLine){
     line_manager lm;
     FILE* in;
-    in=fopen("commands.txt","r");
-    do the routine for one insertion
-    change delete to return true-false and check if true is returned
-    EXPECT_EQ(true, insert(....));
-}*/
+    in=fopen("test.work","r");
+    line_manager_init(&lm, in, 'Q');
+    //lm_fetch_line(&lm);
+    EXPECT_EQ(false ,lm_fetch_ngram(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}
+
+TEST(ISQUERY, YES){
+    line_manager lm;
+    FILE* in;
+    in=fopen("test.work","r");
+    line_manager_init(&lm, in, 'Q');
+    lm_fetch_line(&lm);
+    lm_fetch_ngram(&lm);
+    EXPECT_EQ(true ,lm_is_query(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}
+
+TEST(ISQUERY, NO){
+    line_manager lm;
+    FILE* in;
+    in=fopen("test.work","r");
+    line_manager_init(&lm, in, 'Q');
+    lm_fetch_line(&lm);
+    lm_fetch_line(&lm);
+    lm_fetch_line(&lm);
+    EXPECT_EQ(false ,lm_is_query(&lm));
+    line_manager_fin(&lm);
+    fclose(in);
+}
+
+TEST(NgramDetection, MultipleTimes){
+    line_manager lm;
+    FILE* in, *out;
+    in=fopen("input/MultipleTimes", "r");
+    out=fopen("output/MultipleTimes", "w+");
+    line_manager_init(&lm, in, 'Q');
+    trie db;
+    trie_init(&db,5);
+    result_manager rm;
+    result_manager_init(&rm, out);
+    bool has_line;
+    has_line=lm_fetch_line(&lm);
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
+        }
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm);
+    }
+
+    char buffer[100];
+    int size=100;
+    fseek(out, 0, SEEK_SET);
+    if(fgets(buffer, size, out)){
+        int r;
+        r=strcmp("this is a\n", buffer);
+        EXPECT_EQ(0, r);
+    }
+
+    trie_fin(&db);
+    result_manager_fin(&rm);
+    line_manager_fin(&lm);
+    fclose(in);
+    fclose(out);
+}
+
+TEST(DeleteNgram, DeleteGhost){
+    line_manager lm;
+    FILE* in, *out;
+    in=fopen("input/DeleteGhostNgram", "r");
+    out=fopen("output/DeleteGhostNgram", "w+");
+    line_manager_init(&lm, in, 'Q');
+    trie db;
+    trie_init(&db,5);
+    result_manager rm;
+    result_manager_init(&rm, out);
+    bool has_line;
+    has_line=lm_fetch_line(&lm);
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
+        }
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm);
+    }
+
+    char buffer[100];
+    int size=100;
+    fseek(out, 0, SEEK_SET);
+    if(fgets(buffer, size, out)){
+        int r;
+        r=strcmp("THIS IS A DOG\n", buffer);
+        EXPECT_EQ(0, r);
+    }
+
+    trie_fin(&db);
+    result_manager_fin(&rm);
+    line_manager_fin(&lm);
+    fclose(in);
+    fclose(out);
+}
+
+TEST(DeleteNgram, MasterNgram){
+    line_manager lm;
+    FILE* in, *out;
+    in=fopen("input/DeleteMasterNgram", "r");
+    out=fopen("output/DeleteMasterNgram", "w+");
+    line_manager_init(&lm, in, 'Q');
+    trie db;
+    trie_init(&db,5);
+    result_manager rm;
+    result_manager_init(&rm, out);
+    bool has_line;
+    has_line=lm_fetch_line(&lm);
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
+        }
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm);
+    }
+
+    char buffer[100];
+    int size=100;
+    fseek(out, 0, SEEK_SET);
+    int r=0;
+    while(fgets(buffer, size, out)){
+        r=strcmp("THIS IS A\n", buffer);
+        EXPECT_EQ(0, r);
+        
+    }
+    trie_fin(&db);
+    result_manager_fin(&rm);
+    line_manager_fin(&lm);
+    fclose(in);
+    fclose(out);
+}
+
+TEST(DeleteNgram, SubNgram){
+    line_manager lm;
+    FILE* in, *out;
+    in=fopen("input/DeleteSubNgram", "r");
+    out=fopen("output/DeleteSubNgram", "w+");
+    line_manager_init(&lm, in, 'Q');
+    trie db;
+    trie_init(&db,5);
+    result_manager rm;
+    result_manager_init(&rm, out);
+    bool has_line;
+    has_line=lm_fetch_line(&lm);
+    while(has_line==true){
+        if(lm_is_insert(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_insert(&db,&lm);
+        }
+        else if(lm_is_delete(&lm)==true){
+            lm_fetch_ngram(&lm);
+            trie_delete(&db,&lm);
+        }
+        else if(lm_is_query(&lm)==true){
+            trie_search(&db,&lm,&rm);
+        }
+        else{
+            fprintf(stderr,"Corrupted line\n");
+        }
+        has_line=lm_fetch_line(&lm);
+    }
+
+    char buffer[100];
+    int size=100;
+    fseek(out, 0, SEEK_SET);
+    int r=0;
+    int i=0;
+    while(fgets(buffer, size, out)){
+        if(i==0){
+            r=strcmp("-1\n", buffer);
+            EXPECT_EQ(0, r);
+        }
+        else{
+            r=strcmp("THIS IS A CAT WALKS\n", buffer);
+            EXPECT_EQ(0, r);
+        }
+        i++;
+    }
+    
+    trie_fin(&db);
+    result_manager_fin(&rm);
+    line_manager_fin(&lm);
+    fclose(in);
+    fclose(out);
+}
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -36,4 +36,8 @@ string_utils.h/.c:
         -rm_detected: the words of char** buffer are a ngram so transfer them to output_buffer
         -rm_undetected: discard everything in char** buffer
         -rm_complete: give output_buffer to output file. If it is empty write -1.
+
+Elapsed time without optimization: 3.913862
+Elapsed time with:2.378355
+
     

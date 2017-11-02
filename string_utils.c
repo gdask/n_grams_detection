@@ -85,7 +85,11 @@ bool lm_fetch_line(line_manager* obj){
                 obj->buffer=temp;
                 oldsize=obj->bufsize;
                 obj->bufsize=2*obj->bufsize;
-                fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+                char* retbuf;
+                retbuf=fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+                if(retbuf==NULL){ //something went wrong(EOF)
+                    return false;
+                }
             }
             //printf("Line read:%s", obj->buffer);
         }
@@ -145,9 +149,12 @@ bool lm_fetch_line(line_manager* obj){
                 obj->buffer=temp;
                 oldsize=obj->bufsize;
                 obj->bufsize=2*obj->bufsize;
-                fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+                char* retbuf;
+                retbuf=fgets(&obj->buffer[oldsize-1], oldsize+1, obj->input); //fgets writes after oldsize-1 because before this position i have the previous line
+                if(retbuf==NULL){ //something went wrong(EOF)
+                    return false;
+                }
             }
-           //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;

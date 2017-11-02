@@ -10,3 +10,5 @@ TEST macros are shown in tests.cpp.
 
 In unit test, i check functions that return something, if a function is void, i may can check unnormal exit value.
 Exit(-1) => return value is 255 not -1.
+
+In unit test we are trying to test some cases of addition/delete/search.
