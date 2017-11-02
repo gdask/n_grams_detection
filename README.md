@@ -18,6 +18,14 @@ Trie_node.h/.c :   Implements the 'Trie_node' data stracture.
     tn_insert(trie_node* current,input_word) adds a new leaf at current trie node,with Word=input_word if that doesnt exists,and returns a pointer at trie_node with Word==input_word.
 
 string_utils.h/.c: 
+    Line Manager:
+        This structure handles input, init and work files. For our implementation we used 2 line managers(each for init and work files).
+        We keep a buffer for each line read, which has size at first INIT_SIZE and in case of bigger lines, we handle it with realloc.
+        -lm_fetch_line(): reads a line from input file, keep it to input_buffer. In this fuction, spaces are erased and made \0 in order to seperate the words and we keep the upper limit of how many words are keep.
+        -lm_fetch_ngram(): Keeps the start of ngram in line.
+        -lm_fetch_word(): Returns words of current ngram that we work on.
+        -lm_is_query/insert/delete(): Boolean return value for id of line detection.
+
     Result Manager:
         This structure keeps a buffer of char that will be sent to output_file and an array of pointers to words that maybe will be included to my final result.
 
