@@ -83,7 +83,7 @@ bool trie_delete(trie* obj,line_manager* lm){
     return true;
 }
 
-void trie_search(trie* obj,line_manager* lm,result_manager* rm){
+void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
     //ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
@@ -102,7 +102,7 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm){
             rm_append_word(rm,current_word);
             if(current_node->final==true){
                 if(f_append(&obj->detected_nodes,current_node)==true){
-                    rm_ngram_detected(rm);
+                    rm_ngram_detected(rm, na);
                     //fprintf(stderr,"%p\n",current_node);
                 }
             }

@@ -209,9 +209,9 @@ void quickSort(ngram_array* obj, int low, int high)
 void na_topk_sort(ngram_array* obj, int k){
     int i=0;
     quickSort(obj, 0, obj->first_available_slot-1);
-    while(i<obj->first_available_slot){
+    while(i<obj->first_available_slot && k!=0){
             if(obj->Array[i].ngram!=NULL){
-                printf("%s", obj->Array[i].ngram);
+                printf("%s|", obj->Array[i].ngram);
                 k--;
             }
         i++;

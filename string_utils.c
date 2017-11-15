@@ -64,7 +64,7 @@ bool lm_is_delete(line_manager* obj){
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj){
+bool lm_fetch_line(line_manager* obj, ngram_array* na){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
 
@@ -101,8 +101,22 @@ bool lm_fetch_line(line_manager* obj){
         if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
             //In case of F you just ignore this line and get the next one.
             if(obj->buffer[0]=='F'){
-                //no more tasks to do, IGNORE for now
-                return lm_fetch_line(obj);  
+                if(obj->buffer[1]==' '){
+                    char *ptr;
+                    long ret;
+                    int i=0;
+                    while(obj->buffer[i]!='\n'){
+                        i++;
+                    }
+                    obj->buffer[i]='\0';
+                    ret = strtol(&obj->buffer[2], &ptr, 10);
+                    printf("Top:");
+                    //na_topk(na, ret);
+                    na_topk_sort(na, ret);
+                    na_reuse(na);
+                    printf("\n");
+                }
+                return lm_fetch_line(obj, na);  
             }
             /*keep line status, check if ID is valid*/
             obj->line_status=obj->buffer[0];
@@ -325,11 +339,12 @@ void rm_ngram_undetected(result_manager* obj){
 
 /*Αdd all the words of word_buffer to output buffer plus one |
 if current_ngram==NULL that means that i dont need to strcpy last ngram of output buffer, else make a copy of that*/
-void rm_ngram_detected(result_manager* obj){
+void rm_ngram_detected(result_manager* obj, ngram_array* na){
     int word_len=0;
     int occupied_slots=obj->first_available_slot-1;
     int n_gram_len=0;
     int i=0;
+    int current_index=0;
     /*check if current_ngram is null, so you can or not use last thing that was written in output_buffer*/
     if(obj->current_ngram!=NULL){
         /*check if it fits*/
@@ -348,10 +363,12 @@ void rm_ngram_detected(result_manager* obj){
         memmove(&obj->output_buffer[obj->first_available_slot], obj->current_ngram, n_gram_len-1);
         obj->output_buffer[obj->first_available_slot+n_gram_len-2]=' '; // if it dont counts /0 else i will test word_len-1
         obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
+        current_index=obj->first_available_slot;
         obj->first_available_slot=obj->first_available_slot+n_gram_len-1;
         occupied_slots=occupied_slots+n_gram_len;
     }
     else{
+        current_index=obj->first_available_slot;
         obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
     }
     while(obj->word_buffer[i]!='\0'){
@@ -379,10 +396,15 @@ void rm_ngram_detected(result_manager* obj){
         occupied_slots=occupied_slots+word_len;
         i++;
     }
-    obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
-    //printf("Detected ngram:%s\n",obj->current_ngram);
+    obj->output_buffer[obj->first_available_slot-1]='\0';
+    int len=0;
+    len=obj->first_available_slot-current_index;
+    int pos=na_lookup(na, &obj->output_buffer[current_index], len);   
+    if(pos!=-1){
+        na_insert(na, &obj->output_buffer[current_index], pos, len);
+    }
     /*clean word buffer*/
-    //printf("Detected\n");
+    obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
     memset(obj->word_buffer, 0, obj->bufsize);
     obj->current_word_index=-1;
 }
