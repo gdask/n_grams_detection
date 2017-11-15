@@ -22,9 +22,39 @@ void bf_init(b_filter* obj){
     memset(obj->bit_vector,0,V_SIZE);
 }
 
+#if OPT == 1 // MITZENMACHER OPTIMIZATION
+void bf_insert(b_filter* obj,void* input){
+    uint32_t i,h1,h2,target_bit;
+    MurmurHash3_x86_32(&input,sizeof(void*),0,&h1);
+    MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
+
+    for(i=0;i<OPT_K;i++){
+        //target_bit = (h1 + (h2>>(i))) &MASK;
+        target_bit = (h1 + (h2*(i))) >>SWIFT;
+        bit_set(obj->bit_vector,target_bit);
+    }
+    obj->inserted++;
+}
+
+bool bf_lookup(b_filter* obj,void* input){
+    uint32_t i,h1,h2,target_bit;
+    MurmurHash3_x86_32(&input,sizeof(void*),0,&h1);
+    MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
+
+    for(i=0;i<OPT_K;i++){
+        //target_bit = (h1 + (h2>>(i))) &MASK;
+        target_bit = (h1 + (h2*(i))) >>SWIFT;
+        if(bit_get(obj->bit_vector,target_bit)==false){
+            return false;
+        }
+    }
+    return true;
+}
+
+#else //NOT OPTIMIZED BUT STILL BETTER
 void bf_insert(b_filter* obj,void* input){
     uint32_t seed;
-    uint32_t result;
+    uint32_t result=0;
 
     for(seed=0;seed<OPT_K;seed++){
         MurmurHash3_x86_32(&input,sizeof(void*),seed,&result);
@@ -35,7 +65,7 @@ void bf_insert(b_filter* obj,void* input){
 
 bool bf_lookup(b_filter* obj,void* input){
     uint32_t seed;
-    uint32_t result;
+    uint32_t result=0;
 
     for(seed=0;seed<OPT_K;seed++){
         MurmurHash3_x86_32(&input,sizeof(void*),seed,&result);
@@ -45,23 +75,7 @@ bool bf_lookup(b_filter* obj,void* input){
     }
     return true;
 }
-/*Conditional insert,if input doesnt already exists,is inserted and returns true*/
-/*Otherwise false is returned*/
-bool bf_append(b_filter* obj,void* input){
-    uint32_t seed;
-    uint32_t result;
-
-    bool found = true;
-    for(seed=0;seed<OPT_K;seed++){
-        MurmurHash3_x86_32(&input,sizeof(void*),seed,&result);
-        if(bit_get(obj->bit_vector,result>>SWIFT)==false){
-            found = false;
-            bit_set(obj->bit_vector,result>>SWIFT);
-        }
-    }
-    if(found==false) obj->inserted++;
-    return !found;
-}
+#endif
 
 bool bf_full(b_filter* obj){
     if(obj->inserted < CAPACITY){
@@ -107,7 +121,7 @@ bool f_append(filter* obj,void* input){
     for(i=0;i<=obj->in_use;i++){
         if(bf_lookup(&obj->arr[i],input)==true) return false;
     }
-    //IN CASE THAT INPUT IS NOT IN
+    //IN CASE THAT INPUT IS NOT IN INSERT
     if(bf_full(&obj->arr[obj->in_use])==true){
         obj->in_use++;
         if(obj->in_use == obj->size){

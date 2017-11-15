@@ -2,14 +2,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "bloom_filter.h"
+#include "../bloom_filter.h"
 #include <time.h>
 
 int main(int argc, char **argv) {
 	b_filter obj;
 	bf_init(&obj);
 	filter set;
-	f_init(&set);
+	filter_init(&set);
 	int i,counter;
 	clock_t start,stop;
 	void* input;
@@ -19,11 +19,11 @@ int main(int argc, char **argv) {
 	counter=0;
 	start=clock();
 	for(i=0;i<CAPACITY;i++){
-		counter+=bf_append(&obj,input);
+		bf_insert(&obj,input);
 		input++;
 	}
 	stop=clock();
-	printf("%d Inserts in %d cycles\n\n",counter,(int)(stop-start));
+	printf("%d Inserts in %d cycles\n\n",CAPACITY,(int)(stop-start));
 
 	counter=0;
 	input=NULL;
@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
 	printf("Expected: %d, Actual: %d\n\n",CAPACITY,counter);
 
 	//bf_print(&obj);
+	//exit(0);
 	
 	counter=0;
 	input=NULL;
@@ -116,5 +117,5 @@ int main(int argc, char **argv) {
 	stop=clock();
 	printf("%d Checks in %d cycles\n",1000000,(int)(stop-start));
 	printf("Expected: %d, Actual: %d\n\n",1000,counter);
-	f_fin(&set);
+	filter_fin(&set);
 }
