@@ -3,6 +3,7 @@
 
 #include "trie_node.h"
 #include "string_utils.h"
+#include "bloom_filter.h"
 
 struct pointer_set{
     int Size;
@@ -20,7 +21,8 @@ struct trie{
     trie_node *head;
     int max_height;
     int ca_init_size;
-    pointer_set detected_nodes;
+    //pointer_set detected_nodes;
+    filter detected_nodes;
 };
 typedef struct trie trie;
 

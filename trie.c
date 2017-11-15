@@ -14,13 +14,15 @@ void trie_init(trie* obj,int init_child_arr_size){
     }
     tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
-    pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
+    //pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
+    filter_init(&obj->detected_nodes);
 }
 
 void trie_fin(trie* obj){
     tn_fin(obj->head);
     free(obj->head);
-    pointer_set_fin(&obj->detected_nodes);
+    //pointer_set_fin(&obj->detected_nodes);
+    filter_fin(&obj->detected_nodes);
 }
 
 
@@ -84,7 +86,8 @@ bool trie_delete(trie* obj,line_manager* lm){
 void trie_search(trie* obj,line_manager* lm,result_manager* rm){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
-    ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
+    //ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
+    f_reuse(&obj->detected_nodes);
 
     while(valid_ngram==true){
         rm_new_ngram(rm);
@@ -98,8 +101,9 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm){
             }
             rm_append_word(rm,current_word);
             if(current_node->final==true){
-                if(ps_append(&obj->detected_nodes,current_node)==true){
+                if(f_append(&obj->detected_nodes,current_node)==true){
                     rm_ngram_detected(rm);
+                    //fprintf(stderr,"%p\n",current_node);
                 }
             }
             current_word = lm_fetch_word(lm);
