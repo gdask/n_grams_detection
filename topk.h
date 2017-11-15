@@ -5,26 +5,37 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-typedef struct queue_node{
+typedef struct na_node{
     int rank;
     char* ngram; //initialized to initbufsize
     int bufsize;
-}queue_node;
+}na_node;
 
-typedef struct myqueue{
-        queue_node* Array; 
+typedef struct ngram_array{
+        na_node* Array; 
         int bufsize;
         int first_available_slot;
-}myqueue;
+}ngram_array;
 
-void queue_init(myqueue *obj);
-void queue_fin(myqueue *obj);
+void na_init(ngram_array *obj);
+void na_fin(ngram_array *obj);
+void na_reuse(ngram_array *obj);
 
-/*if ngram is not in my queue, insert at the end*/
-void queue_insert(myqueue *q, char* ngram);
-void queue_topk(myqueue *obj, int k);
+/*if ngram is not in my na, insert at the end*/
+void na_insert(ngram_array *q, char* ngram, int goal_index, int len);
+void na_append(na_node *obj, char* input_ngram, int len);
+void na_topk(ngram_array *obj, int k);
 
-/*this function is called by result manager each time a ngram is detected*/
-bool queque_lookup(myqueue *obj, char* input_ngram);
+/*for heuristic topk*/
+int na_ngram(ngram_array *obj, int obj_rank, int k);
+int max_rank(ngram_array *obj);
+
+/*this function returns -1 if ngram already in array or else the right position*/
+int na_lookup(ngram_array *obj, char* input_ngram, int len);
+
+//Quicksort
+void quickSort(ngram_array obj[], int low, int high);
+int partition (ngram_array *obj, int low, int high);
+void na_topk_sort(ngram_array* obj, int k);
 
 #endif
