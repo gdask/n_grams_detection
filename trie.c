@@ -1,5 +1,6 @@
 #include "trie.h"
 #include <stdlib.h>
+#include <string.h>
 
 void trie_init(trie* obj,int init_child_arr_size){
     if(init_child_arr_size < 1){
@@ -14,15 +15,15 @@ void trie_init(trie* obj,int init_child_arr_size){
     }
     tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
-    //pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
-    filter_init(&obj->detected_nodes);
+    pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
+    //filter_init(&obj->detected_nodes);
 }
 
 void trie_fin(trie* obj){
     tn_fin(obj->head);
     free(obj->head);
-    //pointer_set_fin(&obj->detected_nodes);
-    filter_fin(&obj->detected_nodes);
+    pointer_set_fin(&obj->detected_nodes);
+    //filter_fin(&obj->detected_nodes);
 }
 
 
@@ -86,8 +87,8 @@ bool trie_delete(trie* obj,line_manager* lm){
 void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
-    //ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
-    f_reuse(&obj->detected_nodes);
+    ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
+    //f_reuse(&obj->detected_nodes);
 
     while(valid_ngram==true){
         rm_new_ngram(rm);
@@ -101,7 +102,7 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
             }
             rm_append_word(rm,current_word);
             if(current_node->final==true){
-                if(f_append(&obj->detected_nodes,current_node)==true){
+                if(ps_append(&obj->detected_nodes,current_node)==true){
                     rm_ngram_detected(rm, na);
                     //fprintf(stderr,"%p\n",current_node);
                 }
@@ -143,12 +144,36 @@ void ps_reuse(pointer_set* obj, int new_size){
     obj->First_Available_Slot=0;
 }
 
-bool ps_append(pointer_set* obj,void* ptr){
+/*bool ps_append(pointer_set* obj,void* ptr){
     int i;
     for(i=0;i<obj->First_Available_Slot;i++){
         if(obj->Array[i]==ptr) return false;
     }
     obj->Array[obj->First_Available_Slot]= ptr;
+    obj->First_Available_Slot++;
+    return true;
+}*/
+//binary implementation
+bool ps_append(pointer_set* obj,void* ptr){
+    int lower_bound = 0;
+    int upper_bound = obj->First_Available_Slot-1;
+    int middle = (lower_bound + upper_bound)/2;
+    while(lower_bound <= upper_bound){
+        if(obj->Array[middle] < ptr){
+            lower_bound = middle +1;
+        }
+        else if(obj->Array[middle] > ptr){
+            upper_bound = middle -1;
+        }
+        else{ // INPUT ALREADY IN
+            return false;
+        }
+        middle = (lower_bound+upper_bound)/2;
+    }
+    //INSERT INPUT AT LOWER BOUND
+    size_t movable =(obj->First_Available_Slot - lower_bound)*sizeof(void*);
+    memmove(&obj->Array[lower_bound+1],&obj->Array[lower_bound],movable);
+    obj->Array[lower_bound] = ptr;
     obj->First_Available_Slot++;
     return true;
 }

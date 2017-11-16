@@ -21,8 +21,8 @@ struct trie{
     trie_node *head;
     int max_height;
     int ca_init_size;
-    //pointer_set detected_nodes;
-    filter detected_nodes;
+    pointer_set detected_nodes;
+    //filter detected_nodes;
 };
 typedef struct trie trie;
 
