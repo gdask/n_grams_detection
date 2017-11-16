@@ -211,8 +211,14 @@ void na_topk_sort(ngram_array* obj, int k){
     quickSort(obj, 0, obj->first_available_slot-1);
     while(i<obj->first_available_slot && k!=0){
             if(obj->Array[i].ngram!=NULL){
-                printf("%s|", obj->Array[i].ngram);
-                k--;
+                 if(i==obj->first_available_slot-2 || k-1==0){
+                    printf("%s", obj->Array[i].ngram);
+                    k--;
+                }
+                else{
+                    printf("%s|", obj->Array[i].ngram);
+                    k--;
+                }
             }
         i++;
     }
