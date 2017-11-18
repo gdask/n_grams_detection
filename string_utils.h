@@ -8,7 +8,8 @@
 
 struct line_manager{
     FILE *input;
-    char file_status;
+    char file_status; // static(S) or dynamic(D)
+    char lm_status; //lm_status is for init file or query
     char* buffer; //each line from file
     int bufsize;
     char line_status; //buffer[0]:A,Q,D
