@@ -23,6 +23,7 @@ void na_reuse(ngram_array *obj);
 
 /*if ngram is not in my na, insert at the end*/
 void na_insert(ngram_array *q, char* ngram, int goal_index, int len);
+void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram);
 void na_append(na_node *obj, char* input_ngram, int len);
 void na_topk(ngram_array *obj, int k);
 

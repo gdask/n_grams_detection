@@ -15,14 +15,13 @@ void na_init(ngram_array *obj){
     for(i=0; i<obj->bufsize; i++){
         (obj->Array[i]).ngram = NULL;
         obj->Array[i].bufsize=0;
-        obj->Array[i].rank=-1;
+        obj->Array[i].rank=0;
     }
     obj->first_available_slot=0;
 }
 
 void na_fin(ngram_array *obj){
     int i;
-    printf("buffsize:%d\n", obj->bufsize);
     if(obj->Array != NULL){
         for(i=0;i<obj->first_available_slot; i++){
             if(obj->Array[i].ngram!=NULL){
@@ -42,7 +41,7 @@ void na_reuse(ngram_array *obj){
                 free(obj->Array[i].ngram);
                 obj->Array[i].ngram=NULL;
                 obj->Array[i].bufsize=0;
-                obj->Array[i].rank=-1;
+                obj->Array[i].rank=0;
             }
         }
         obj->first_available_slot=0;
@@ -56,7 +55,7 @@ int na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
     int middle = (lower_bound+upper_bound)/2;
     while(lower_bound <= upper_bound){
             int cmp_res = 0;
-            cmp_res=strncmp(obj->Array[middle].ngram, input_ngram, len_ngram-1);
+            cmp_res=strcmp(obj->Array[middle].ngram, input_ngram);
             if(cmp_res < 0){
                 lower_bound = middle + 1;
             }
@@ -66,7 +65,7 @@ int na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
             else{
                 //Array[middle] == input_ngram
                 //immidiatilly update rank
-                obj->Array[middle].rank = (obj->Array[middle]).rank +1;
+                obj->Array[middle].rank ++;
                 return -1;
             }
             middle = (lower_bound+upper_bound)/2;
@@ -76,12 +75,32 @@ int na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
     return lower_bound;
 }
 
+void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram){
+    if(obj->first_available_slot==obj->bufsize){
+        na_node* temp = realloc(obj->Array, 2*(obj->bufsize)*sizeof(na_node));
+        if(temp==NULL){
+            fprintf(stderr,"Realloc Failed :: na_insert\n");
+            exit(-1);
+        }
+        obj->Array=temp;
+        obj->bufsize= 2*obj->bufsize;
+    }
+
+    int goal_index= obj->first_available_slot;
+
+    //find the right pos in table
+    na_append(&obj->Array[goal_index], input_ngram, len_ngram);
+   
+    obj->first_available_slot++;
+}
+
 /*insert new ngram at the end, at first available slot*/
 void na_insert(ngram_array *obj, char* input_ngram, int goal_index, int len_ngram){
     
     /*double array*/
     if(obj->bufsize==goal_index || obj->first_available_slot==obj->bufsize){
         na_node* temp = realloc(obj->Array, 2*(obj->bufsize)*sizeof(na_node));
+        printf("Realloc\n");
         if(temp==NULL){
             fprintf(stderr,"Realloc Failed :: na_insert\n");
             exit(-1);
@@ -114,19 +133,20 @@ void na_append(na_node *obj, char* input_ngram, int len_ngram){
         exit(-1);
     }
     memmove(obj->ngram, input_ngram, len_ngram);
-    obj->rank=0;
+    obj->rank=1;
 }
 
 void na_topk(ngram_array *obj, int k){
     int max;
     max=max_rank(obj);
     int newk;
+    printf("Top: ");
     while(k>0 && max>=0){
-        /*change for file with "|"*/
         newk=na_ngram(obj, max, k);
         k=newk;
         max--;
     }
+    printf("\n");
 }
 
 int max_rank(ngram_array *obj){
@@ -170,20 +190,29 @@ void swap(ngram_array * obj, int a, int b){
    to left of pivot and all greater elements to right
    of pivot */
 int partition (ngram_array *obj, int low, int high){
-    int pivot = obj->Array[high].rank;    // pivot
+    int pivot1 = obj->Array[high].rank;    // pivot
+    char* pivot2=malloc(sizeof(char)*strlen(obj->Array[high].ngram)+1);
+    strcpy(pivot2, obj->Array[high].ngram);
     int i = (low - 1);  // Index of smaller element
  
     for (int j = low; j <= high- 1; j++)
     {
         // If current element is smaller than or
         // equal to pivot
-        if (obj->Array[j].rank >= pivot)
+        if (obj->Array[j].rank > pivot1)
         {
             i++;    // increment index of smaller element
             swap(obj, i, j);
         }
+        else if(obj->Array[j].rank == pivot1){
+            if(strcmp(obj->Array[j].ngram,pivot2)<0){
+                i++;    // increment index of smaller element
+                swap(obj, i, j);
+            }
+        }
     }
     swap(obj, i + 1, high);
+    free(pivot2);
     return (i + 1);
 }
  
@@ -208,15 +237,41 @@ void quickSort(ngram_array* obj, int low, int high)
 
 void na_topk_sort(ngram_array* obj, int k){
     int i=0;
+    int flag=1; //nothing printed
     quickSort(obj, 0, obj->first_available_slot-1);
     while(i<obj->first_available_slot && k!=0){
             if(obj->Array[i].ngram!=NULL){
+                if(flag==1){
+                    printf("Top: ");
+                    flag=0;
+                }
                  if(i==obj->first_available_slot-2 || k-1==0){
                     printf("%s", obj->Array[i].ngram);
                     k--;
                 }
                 else{
                     printf("%s|", obj->Array[i].ngram);
+                    k--;
+                }
+            }
+        i++;
+    }
+    if(flag==0)
+        printf("\n");
+}
+
+//print all line with rank(only for testing)
+void na_topk_sort1(ngram_array* obj, int k){
+    int i=0;
+    quickSort(obj, 0, obj->first_available_slot-1);
+    while(i<obj->first_available_slot){
+            if(obj->Array[i].ngram!=NULL){
+                 if(i==obj->first_available_slot-2 || k-1==0){
+                    printf("%d %s", obj->Array[i].rank, obj->Array[i].ngram);
+                    k--;
+                }
+                else{
+                    printf("%d %s|", obj->Array[i].rank, obj->Array[i].ngram);
                     k--;
                 }
             }

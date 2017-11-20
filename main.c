@@ -52,11 +52,14 @@ int main(int argc,char* argv[]){
     line_manager lm_init;
     line_manager_init(&lm_init,init_file, 'I');
     has_line = lm_fetch_line(&lm_init, &na);    
+
     while(has_line==true){
         lm_fetch_ngram(&lm_init);
         trie_insert(&db,&lm_init);
         has_line= lm_fetch_line(&lm_init, &na);
     }
+
+    //tn_print_subtree(db.head);
 
     line_manager lm;
     line_manager_init(&lm,query_file,'Q');

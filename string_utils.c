@@ -20,9 +20,9 @@ int lm_n_gram_counter(line_manager* obj){
 
 /*Initialise structure query manager
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
-void line_manager_init(line_manager* obj,FILE *fp, char file_status){
+void line_manager_init(line_manager* obj,FILE *fp, char lm_status){
     obj->input=fp;
-    obj->file_status=file_status;
+    obj->lm_status=lm_status;
     obj->buffer= (char*) malloc(INIT_SIZE_BUF*sizeof(char)); 
     if(obj->buffer==NULL){
         fprintf(stderr,"Malloc failed :: line_manager_init\n");
@@ -72,7 +72,7 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
         fprintf(stderr,"Object is not initisialised:: lm_fetch_line\n");
         exit(-1);
     }
-    if(obj->file_status=='Q'){
+    if(obj->lm_status=='Q'){
         if(fgets(obj->buffer, obj->bufsize, obj->input)){
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
@@ -110,11 +110,10 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     }
                     obj->buffer[i]='\0';
                     ret = strtol(&obj->buffer[2], &ptr, 10);
-                    printf("Top:");
                     //na_topk(na, ret);
+                    
                     na_topk_sort(na, ret);
                     na_reuse(na);
-                    printf("\n");
                 }
                 return lm_fetch_line(obj, na);  
             }
@@ -146,11 +145,19 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
             return false;
         }
     }
-    else if(obj->file_status=='I'){
-        //every line is a ngram
-        obj->buffer[0]='A';
-        obj->buffer[1]=' ';
+    else if(obj->lm_status=='I'){
         if(fgets(&obj->buffer[2],  obj->bufsize-2, obj->input)){
+            if(strcmp(&obj->buffer[2], "DYNAMIC")==0){
+                obj->file_status='D';
+                return lm_fetch_line(obj, na);  
+            }
+            else if(strcmp(&obj->buffer[2], "STATIC")==0){
+                obj->file_status='S';
+                return lm_fetch_line(obj, na);  
+            }
+            //every line is a ngram
+            obj->buffer[0]='A';
+            obj->buffer[1]=' ';
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
                 //printf("Ready to make a realloc\n");
@@ -169,6 +176,7 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     return false;
                 }
             }
+            //printf("line %s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
             return false;
@@ -402,6 +410,7 @@ void rm_ngram_detected(result_manager* obj, ngram_array* na){
     int pos=na_lookup(na, &obj->output_buffer[current_index], len);   
     if(pos!=-1){
         na_insert(na, &obj->output_buffer[current_index], pos, len);
+        //na_insert_at_the_end(na, &obj->output_buffer[current_index], len);
     }
     /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
