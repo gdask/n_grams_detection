@@ -5,79 +5,46 @@
 #include <stdio.h>
 #include "murmur3.h"
 
+#define bit_get(bit_vector,target_bit) ((*(target_bit/8+bit_vector)>>(target_bit%8))&1)
+#define bit_set(bit_vector,target_bit) (*(target_bit/8+bit_vector)|=1<<(target_bit%8))
+
+/*
 void bit_set(char* bit_vector,int target_bit){
     char* target = target_bit/8 + bit_vector;
     int swift = target_bit%8;
     *target |= 1 << swift;
 }
-
 bool bit_get(char* bit_vector,int target_bit){
     char* target = target_bit/8 + bit_vector;
     int swift = target_bit%8;
     return (*target >> swift) & 1;
-}
+}*/
 
-void bf_init(b_filter* obj){
+static inline void bf_init(b_filter* obj){
     obj->inserted = 0;
     memset(obj->bit_vector,0,V_SIZE);
 }
 
-#if OPT == 1 // MITZENMACHER OPTIMIZATION
-void bf_insert(b_filter* obj,void* input){
-    uint32_t i,h1,h2,target_bit;
-    MurmurHash3_x86_32(&input,sizeof(void*),0,&h1);
-    MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
-
+static inline void bf_insert(b_filter* obj,uint32_t* hashes,void* input){
+    int i;
     for(i=0;i<OPT_K;i++){
-        //target_bit = (h1 + (h2>>(i))) &MASK;
-        target_bit = (h1 + (h2*(i))) >>SWIFT;
-        bit_set(obj->bit_vector,target_bit);
+        bit_set(obj->bit_vector,hashes[i]);
     }
     obj->inserted++;
 }
 
-bool bf_lookup(b_filter* obj,void* input){
-    uint32_t i,h1,h2,target_bit;
-    MurmurHash3_x86_32(&input,sizeof(void*),0,&h1);
-    MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
+static inline bool bf_lookup(b_filter* obj,uint32_t *hashes,void* input){
+    int i;
 
     for(i=0;i<OPT_K;i++){
-        //target_bit = (h1 + (h2>>(i))) &MASK;
-        target_bit = (h1 + (h2*(i))) >>SWIFT;
-        if(bit_get(obj->bit_vector,target_bit)==false){
+        if(bit_get(obj->bit_vector,hashes[i])==false){
             return false;
         }
     }
     return true;
 }
 
-#else //NOT OPTIMIZED BUT STILL BETTER
-void bf_insert(b_filter* obj,void* input){
-    uint32_t seed;
-    uint32_t result=0;
-
-    for(seed=0;seed<OPT_K;seed++){
-        MurmurHash3_x86_32(&input,sizeof(void*),seed,&result);
-        bit_set(obj->bit_vector,result>>SWIFT);
-    }
-    obj->inserted++;
-}
-
-bool bf_lookup(b_filter* obj,void* input){
-    uint32_t seed;
-    uint32_t result=0;
-
-    for(seed=0;seed<OPT_K;seed++){
-        MurmurHash3_x86_32(&input,sizeof(void*),seed,&result);
-        if(bit_get(obj->bit_vector,result>>SWIFT)==false){
-            return false;
-        }
-    }
-    return true;
-}
-#endif
-
-bool bf_full(b_filter* obj){
+static inline bool bf_full(b_filter* obj){
     if(obj->inserted < CAPACITY){
         return false;
     }
@@ -117,9 +84,10 @@ void filter_fin(filter* obj){
 /*RETURNS FALSE IF ENTRY ALREADY IN*/
 /*RETURNS TRUE IF ENTRY WASNT ALREADY IN*/
 bool f_append(filter* obj,void* input){
-    int i;
+    uint32_t i;
+    f_hash(obj,input);  
     for(i=0;i<=obj->in_use;i++){
-        if(bf_lookup(&obj->arr[i],input)==true) return false;
+        if(bf_lookup(&obj->arr[i],obj->hashes,input)==true) return false;
     }
     //IN CASE THAT INPUT IS NOT IN INSERT
     if(bf_full(&obj->arr[obj->in_use])==true){
@@ -134,14 +102,36 @@ bool f_append(filter* obj,void* input){
             obj->size = 2*obj->size;
         }
     }
-    bf_insert(&obj->arr[obj->in_use],input);
+    bf_insert(&obj->arr[obj->in_use],obj->hashes,input);
     return true;
 }
 
 bool f_lookup(filter* obj,void* input){
-    int i=0;
+    f_hash(obj,input);
+    int i;
     for(i=0;i<=obj->in_use;i++){
-        if(bf_lookup(&obj->arr[i],input)==true) return true;
+        if(bf_lookup(&obj->arr[i],obj->hashes,input)==true) return true;
     }
     return false;
 }
+
+#if OPT == 0 //NON OPTIMIZED
+void f_hash(filter* obj,void* input){
+    uint32_t i;
+    for(i=0;i<OPT_K;i++){
+        MurmurHash3_x86_32(&input,sizeof(void*),i,&obj->hashes[i]);
+        obj->hashes[i] >>=SWIFT;
+    }
+}
+#elif OPT == 1 //MITZENMACHER OPTIMIZATION
+void f_hash(filter* obj,void* input){
+    uint32_t i,h1,h2;
+    MurmurHash3_x86_32(&input,sizeof(void*),0,&h1);
+    MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
+
+    for(i=0;i<OPT_K;i++){
+        //obj->hashes[i] = (h1 + (h2>>(i))) &MASK;
+        obj->hashes[i] = (h1 + (h2*(i))) >>SWIFT;
+    }
+}
+#endif

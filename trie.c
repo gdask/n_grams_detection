@@ -15,6 +15,7 @@ void trie_init(trie* obj,int init_child_arr_size){
     }
     tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
+    obj->dynamic = true;
     pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
     //filter_init(&obj->detected_nodes);
 }
@@ -28,10 +29,15 @@ void trie_fin(trie* obj){
 
 
 void trie_insert(trie* obj,line_manager* lm){
+    if(obj->dynamic==false){
+        fprintf(stderr,"Insert on static trie is not available");
+        return;
+    }
     char* current_word = lm_fetch_word(lm);
     trie_node* current_node = obj->head;
     int height=0;
     while(current_word!=NULL){
+        //fprintf(stderr,"WORD:%s\n",current_word);
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         height++;
         current_word = lm_fetch_word(lm);
@@ -45,6 +51,10 @@ void trie_insert(trie* obj,line_manager* lm){
 }
 
 bool trie_delete(trie* obj,line_manager* lm){
+    if(obj->dynamic==false){
+        fprintf(stderr,"Delete on static trie is not available");
+        return false;
+    }
     char* current_word = lm_fetch_word(lm);
     if(current_word==NULL){
         return false;
@@ -104,14 +114,69 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
             if(current_node->final==true){
                 if(ps_append(&obj->detected_nodes,current_node)==true){
                     rm_ngram_detected(rm, na);
-                    //fprintf(stderr,"%p\n",current_node);
                 }
+            }
+            //CHECK CASE OF HYPER NODE HERE
+            if(current_node->mode=='s'){
+                trie_hyper_search(obj,lm,rm,na,(hyper_node*)current_node);
+                break;
             }
             current_word = lm_fetch_word(lm);
         }
         valid_ngram=lm_fetch_ngram(lm);
     }
     rm_completed(rm);
+}
+
+void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
+    char* current_word = lm_fetch_word(lm);
+    char* hyper_word = current->Word_Vector + current->Word_Info[0];
+    short* metadata = current->Word_Info +1;
+    size_t bytes;
+    bool final;
+    while(current_word!=NULL){
+        if(*metadata<0){
+            bytes = -*metadata;
+            final = false;
+        }
+        else if(*metadata>0){
+            bytes = *metadata;
+            final = true;
+        }
+        else{
+            //HYPER NODE DOESNT HAVE ANY OTHER WORD
+            return;
+        }
+        if(strncpy(current_word,hyper_word,bytes)!=0){
+            rm_ngram_undetected(rm);
+            return;
+        }
+        rm_append_word(rm,current_word);
+        if(final==true){
+            if(ps_append(&obj->detected_nodes,hyper_word)==true){
+                rm_ngram_detected(rm, na);
+            }
+        }
+        metadata++;
+        hyper_word += bytes;
+        current_word = lm_fetch_word(lm);
+    }
+    return;
+}
+
+void trie_compress(trie* obj){
+    if(obj->dynamic==false){
+        fprintf(stderr,"Trie object is already compressed\n");
+        return ;
+    }
+    if(sizeof(hyper_node) > sizeof(trie_node)){
+        fprintf(stderr,"Size of trie node must be greater or equal to Size of hyper node due to compability issues\n");
+        fprintf(stderr,"trie_node: %d bytes, hyper_node: %d bytes\n",(int)sizeof(trie_node),(int)sizeof(hyper_node));
+        fprintf(stderr,"Trie cannod be compressed\n");
+        return;
+    }
+    obj->dynamic = false;
+    tn_compress(obj->head);
 }
 
 void pointer_set_init(pointer_set* obj,int init_size){
@@ -144,15 +209,6 @@ void ps_reuse(pointer_set* obj, int new_size){
     obj->First_Available_Slot=0;
 }
 
-/*bool ps_append(pointer_set* obj,void* ptr){
-    int i;
-    for(i=0;i<obj->First_Available_Slot;i++){
-        if(obj->Array[i]==ptr) return false;
-    }
-    obj->Array[obj->First_Available_Slot]= ptr;
-    obj->First_Available_Slot++;
-    return true;
-}*/
 //binary implementation
 bool ps_append(pointer_set* obj,void* ptr){
     int lower_bound = 0;

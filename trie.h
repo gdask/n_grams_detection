@@ -18,6 +18,7 @@ void ps_reuse(pointer_set* obj, int new_size);
 bool ps_append(pointer_set* obj,void* ptr);
 
 struct trie{
+    bool dynamic;
     trie_node *head;
     int max_height;
     int ca_init_size;
@@ -30,7 +31,9 @@ void trie_init(trie* obj,int init_child_arr_size);
 void trie_fin(trie* obj);
 void trie_insert(trie* obj,line_manager* lm);
 void trie_search(trie* obj,line_manager* lm,result_manager *rm, ngram_array* na);
+void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current);
 bool trie_delete(trie* obj,line_manager* lm);
+void trie_compress(trie* obj);
 
 
 
