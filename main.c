@@ -60,6 +60,9 @@ int main(int argc,char* argv[]){
     }
 
     //tn_print_subtree(db.head);
+    trie_compress(&db);
+    //end=clock();
+    //fprintf(stderr,"Trie initiliazed and compressed: %f secs",((float)end-start)/CLOCKS_PER_SEC);
 
     line_manager lm;
     line_manager_init(&lm,query_file,'Q');

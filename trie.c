@@ -111,16 +111,23 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                 break;
             }
             rm_append_word(rm,current_word);
+            if(current_node->mode=='s'){
+                hyper_node* tmp =(hyper_node*)current_node;
+                if(tmp->Word_Info[0]>0){ //Final n_gram case
+                    if(ps_append(&obj->detected_nodes,tmp->Word_Vector)==true){
+                        rm_ngram_detected(rm, na);
+                    }
+                }
+                if(tmp->Word_Info[1]==0) break;
+                trie_hyper_search(obj,lm,rm,na,tmp);
+                break;
+            }
             if(current_node->final==true){
                 if(ps_append(&obj->detected_nodes,current_node)==true){
                     rm_ngram_detected(rm, na);
                 }
             }
             //CHECK CASE OF HYPER NODE HERE
-            if(current_node->mode=='s'){
-                trie_hyper_search(obj,lm,rm,na,(hyper_node*)current_node);
-                break;
-            }
             current_word = lm_fetch_word(lm);
         }
         valid_ngram=lm_fetch_ngram(lm);
@@ -147,7 +154,7 @@ void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_arra
             //HYPER NODE DOESNT HAVE ANY OTHER WORD
             return;
         }
-        if(strncpy(current_word,hyper_word,bytes)!=0){
+        if(strcmp(current_word,hyper_word)!=0){
             rm_ngram_undetected(rm);
             return;
         }

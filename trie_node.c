@@ -314,14 +314,14 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     int middle = (lower_bound+upper_bound)/2;
 
     while(lower_bound <= upper_bound){
-        int cmp_res;
-        if(obj->Array[middle].mode=='s'){
+        int cmp_res = strcmp(obj->Array[middle].Word,input_word);
+        /*if(obj->Array[middle].mode=='s'){
             hyper_node* tmp = (hyper_node*) &obj->Array[middle];
-            cmp_res = strncmp(tmp->Word_Vector,input_word,tmp->Word_Info[0]);
+            cmp_res = strcmp(tmp->Word_Vector,input_word);
         }
         else{
             cmp_res = strcmp(obj->Array[middle].Word,input_word);
-        }
+        }*/
         if(cmp_res < 0){
             lower_bound = middle + 1;
         }
@@ -369,7 +369,7 @@ void hyper_node_insert(hyper_node* obj,trie_node* input){
     int First_Available_Slot = 0; //AND THAT
     while(current!=NULL){
         size_t available_space = obj->vector_size - First_Available_Slot;
-        size_t word_length = strlen(current->Word);
+        size_t word_length = strlen(current->Word)+1;
         //Realloc if any resource is full
         while(available_space <= word_length){
             obj->Word_Vector = realloc(obj->Word_Vector,2*obj->vector_size);
