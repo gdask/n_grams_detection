@@ -18,6 +18,10 @@ int lm_n_gram_counter(line_manager* obj){
     return obj->n_gram_counter;
 }
 
+char lm_get_file_status(line_manager *obj){
+    return obj->file_status;
+}
+
 /*Initialise structure query manager
 Buffer starts with length INIT_SIZE_BUF, if a line cannot fit to a buffer with this size, i will handle it propely in qm_fetch_line*/
 void line_manager_init(line_manager* obj,FILE *fp, char lm_status){

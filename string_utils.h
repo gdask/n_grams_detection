@@ -38,6 +38,9 @@ bool lm_is_insert(line_manager* obj);
 bool lm_is_delete(line_manager* obj);
 int lm_n_gram_counter(line_manager* obj);
 
+/*return file_status*/
+char lm_get_file_status(line_manager *obj);
+
 typedef struct result_manager{
     FILE *output;
     char** word_buffer;
