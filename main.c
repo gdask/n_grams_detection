@@ -60,9 +60,10 @@ int main(int argc,char* argv[]){
     }
 
     //tn_print_subtree(db.head);
-    trie_compress(&db);
-    //end=clock();
-    //fprintf(stderr,"Trie initiliazed and compressed: %f secs",((float)end-start)/CLOCKS_PER_SEC);
+    if(lm_init.file_status=='S'){ //Static files only
+        trie_compress(&db);
+    }
+    line_manager_fin(&lm_init);
 
     line_manager lm;
     line_manager_init(&lm,query_file,'Q');
@@ -90,7 +91,6 @@ int main(int argc,char* argv[]){
     }
 
     line_manager_fin(&lm);
-    line_manager_fin(&lm_init);
     result_manager_fin(&rm);
     na_fin(&na);
     fclose(query_file);
