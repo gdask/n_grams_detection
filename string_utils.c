@@ -77,6 +77,7 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
         exit(-1);
     }
     if(obj->lm_status=='Q'){
+        obj->file_status='\0';
         if(fgets(obj->buffer, obj->bufsize, obj->input)){
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
@@ -150,6 +151,9 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
         }
     }
     else if(obj->lm_status=='I'){
+        //every line is a ngram
+        obj->buffer[0]='A';
+        obj->buffer[1]=' ';
         if(fgets(&obj->buffer[2],  obj->bufsize-2, obj->input)){
             if(strcmp(&obj->buffer[2], "DYNAMIC")==0){
                 obj->file_status='D';
@@ -159,9 +163,7 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                 obj->file_status='S';
                 return lm_fetch_line(obj, na);  
             }
-            //every line is a ngram
-            obj->buffer[0]='A';
-            obj->buffer[1]=' ';
+
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
                 //printf("Ready to make a realloc\n");
