@@ -97,7 +97,7 @@ bool trie_delete(trie* obj,line_manager* lm){
 void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
-    ps_reuse(&obj->detected_nodes,lm_n_gram_counter(lm));
+    ps_reuse(&obj->detected_nodes);
     //f_reuse(&obj->detected_nodes);
 
     while(valid_ngram==true){
@@ -111,14 +111,13 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                 break;
             }
             rm_append_word(rm,current_word);
-            if(current_node->mode=='s'){
+            if(current_node->mode=='s'){ //hyper node
                 hyper_node* tmp =(hyper_node*)current_node;
                 if(tmp->Word_Info[0]>0){ //Final n_gram case
                     if(ps_append(&obj->detected_nodes,tmp->Word_Vector)==true){
                         rm_ngram_detected(rm, na);
                     }
                 }
-                if(tmp->Word_Info[1]==0) break;
                 trie_hyper_search(obj,lm,rm,na,tmp);
                 break;
             }
@@ -204,15 +203,7 @@ void pointer_set_fin(pointer_set* obj){
     free(obj->Array);
 }
 
-void ps_reuse(pointer_set* obj, int new_size){
-    if(obj->Size < new_size){
-        obj->Array = (void**)realloc(obj->Array,new_size*2*sizeof(void*));
-        if(obj->Array==NULL){
-            fprintf(stderr,"ps resize realloc failed\n");
-            exit(-1);
-        }
-        obj->Size = obj->Size*2;
-    }
+void ps_reuse(pointer_set* obj){
     obj->First_Available_Slot=0;
 }
 
@@ -234,6 +225,14 @@ bool ps_append(pointer_set* obj,void* ptr){
         middle = (lower_bound+upper_bound)/2;
     }
     //INSERT INPUT AT LOWER BOUND
+    if(obj->Size == obj->First_Available_Slot){
+        obj->Array = (void**)realloc(obj->Array,obj->Size*2*sizeof(void*));
+        if(obj->Array==NULL){
+            fprintf(stderr,"ps resize realloc failed\n");
+            exit(-1);
+        }
+        obj->Size = obj->Size*2;
+    }
     size_t movable =(obj->First_Available_Slot - lower_bound)*sizeof(void*);
     memmove(&obj->Array[lower_bound+1],&obj->Array[lower_bound],movable);
     obj->Array[lower_bound] = ptr;

@@ -14,7 +14,7 @@ typedef struct pointer_set pointer_set;
 
 void pointer_set_init(pointer_set* obj,int init_size);
 void pointer_set_fin(pointer_set* obj);
-void ps_reuse(pointer_set* obj, int new_size);
+void ps_reuse(pointer_set* obj);
 bool ps_append(pointer_set* obj,void* ptr);
 
 struct trie{

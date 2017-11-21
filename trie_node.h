@@ -87,6 +87,6 @@ struct hyper_node{
 
 void hyper_node_init(hyper_node* obj);
 void hyper_node_fin(hyper_node* obj);
-void hyper_node_insert(hyper_node* obj,trie_node* input);
+bool hyper_node_insert(hyper_node* obj,trie_node* input);
 
 #endif
