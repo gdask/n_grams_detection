@@ -3,27 +3,26 @@
 
 #include "trie_node.h"
 #include "string_utils.h"
-#include "bloom_filter.h"
+#include "filters/bloom_filter.h"
+#include "filters/pointer_set.h"
 
-struct pointer_set{
-    int Size;
-    int First_Available_Slot;
-    void** Array;
-};
-typedef struct pointer_set pointer_set;
-
-void pointer_set_init(pointer_set* obj,int init_size);
-void pointer_set_fin(pointer_set* obj);
-void ps_reuse(pointer_set* obj);
-bool ps_append(pointer_set* obj,void* ptr);
+#define USE_BLOOM 0 //1 for bloom , 0 for pointer set
+#define FILTER_INIT_SIZE 500
 
 struct trie{
     bool dynamic;
     trie_node *head;
     int max_height;
     int ca_init_size;
+    #if USE_BLOOM==1
+    filter detected_nodes;
+    #else
     pointer_set detected_nodes;
-    //filter detected_nodes;
+    #endif
+    //pointers to filter(bloom or pointer_set) functions,because function overloading is not an option in c!
+    void (*reuse_filter)(void* obj);
+    bool (*ngram_inserted)(void* obj,void* input);
+
 };
 typedef struct trie trie;
 

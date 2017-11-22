@@ -16,15 +16,26 @@ void trie_init(trie* obj,int init_child_arr_size){
     tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
     obj->dynamic = true;
-    pointer_set_init(&obj->detected_nodes,obj->ca_init_size*5);
-    //filter_init(&obj->detected_nodes);
+    #if USE_BLOOM == 1
+    //filter_init(&obj->detected_nodes,1000);
+    filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
+    obj->reuse_filter = (void*)&f_reuse;
+    obj->ngram_inserted = (void*)&f_append;
+    #else
+    pointer_set_init(&obj->detected_nodes,FILTER_INIT_SIZE);
+    obj->reuse_filter = (void*)&ps_reuse;
+    obj->ngram_inserted = (void*)&ps_append;
+    #endif
 }
 
 void trie_fin(trie* obj){
     tn_fin(obj->head);
     free(obj->head);
+    #if USE_BLOOM == 1
+    filter_fin(&obj->detected_nodes);
+    #else
     pointer_set_fin(&obj->detected_nodes);
-    //filter_fin(&obj->detected_nodes);
+    #endif
 }
 
 
@@ -97,8 +108,7 @@ bool trie_delete(trie* obj,line_manager* lm){
 void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
-    ps_reuse(&obj->detected_nodes);
-    //f_reuse(&obj->detected_nodes);
+    obj->reuse_filter(&obj->detected_nodes);
 
     while(valid_ngram==true){
         rm_new_ngram(rm);
@@ -114,7 +124,7 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
             if(current_node->mode=='s'){ //hyper node
                 hyper_node* tmp =(hyper_node*)current_node;
                 if(tmp->Word_Info[0]>0){ //Final n_gram case
-                    if(ps_append(&obj->detected_nodes,tmp->Word_Vector)==true){
+                    if(obj->ngram_inserted(&obj->detected_nodes,tmp->Word_Vector)==true){
                         rm_ngram_detected(rm, na);
                     }
                 }
@@ -122,7 +132,7 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                 break;
             }
             if(current_node->final==true){
-                if(ps_append(&obj->detected_nodes,current_node)==true){
+                if(obj->ngram_inserted(&obj->detected_nodes,current_node)==true){
                     rm_ngram_detected(rm, na);
                 }
             }
@@ -159,7 +169,7 @@ void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_arra
         }
         rm_append_word(rm,current_word);
         if(final==true){
-            if(ps_append(&obj->detected_nodes,hyper_word)==true){
+            if(obj->ngram_inserted(&obj->detected_nodes,hyper_word)==true){
                 rm_ngram_detected(rm, na);
             }
         }
@@ -183,59 +193,4 @@ void trie_compress(trie* obj){
     }
     obj->dynamic = false;
     tn_compress(obj->head);
-}
-
-void pointer_set_init(pointer_set* obj,int init_size){
-    obj->Size = init_size;
-    obj->First_Available_Slot=0;
-    if(init_size < 1){
-        fprintf(stderr,"Pointer set init called with < 1 init size\n");
-        exit(-1);
-    }
-    obj->Array = (void**)malloc(init_size*sizeof(void*));
-    if(obj->Array==NULL){
-        fprintf(stderr,"Pointer set init, malloc failed\n");
-        exit(-1);
-    }
-}
-
-void pointer_set_fin(pointer_set* obj){
-    free(obj->Array);
-}
-
-void ps_reuse(pointer_set* obj){
-    obj->First_Available_Slot=0;
-}
-
-//binary implementation
-bool ps_append(pointer_set* obj,void* ptr){
-    int lower_bound = 0;
-    int upper_bound = obj->First_Available_Slot-1;
-    int middle = (lower_bound + upper_bound)/2;
-    while(lower_bound <= upper_bound){
-        if(obj->Array[middle] < ptr){
-            lower_bound = middle +1;
-        }
-        else if(obj->Array[middle] > ptr){
-            upper_bound = middle -1;
-        }
-        else{ // INPUT ALREADY IN
-            return false;
-        }
-        middle = (lower_bound+upper_bound)/2;
-    }
-    //INSERT INPUT AT LOWER BOUND
-    if(obj->Size == obj->First_Available_Slot){
-        obj->Array = (void**)realloc(obj->Array,obj->Size*2*sizeof(void*));
-        if(obj->Array==NULL){
-            fprintf(stderr,"ps resize realloc failed\n");
-            exit(-1);
-        }
-        obj->Size = obj->Size*2;
-    }
-    size_t movable =(obj->First_Available_Slot - lower_bound)*sizeof(void*);
-    memmove(&obj->Array[lower_bound+1],&obj->Array[lower_bound],movable);
-    obj->Array[lower_bound] = ptr;
-    obj->First_Available_Slot++;
-    return true;
 }

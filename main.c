@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "trie_node.h"
 #include "string_utils.h"
 #include "trie.h"
 
@@ -60,7 +59,9 @@ int main(int argc,char* argv[]){
     }
 
     //tn_print_subtree(db.head);
+    lm_init.file_status='S';
     if(lm_init.file_status=='S'){ //Static files only
+        fprintf(stderr,"static\n");
         trie_compress(&db);
     }
     line_manager_fin(&lm_init);

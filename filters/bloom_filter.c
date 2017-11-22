@@ -59,8 +59,8 @@ void bf_print(b_filter* obj){
     printf("\n");
 }
 
-void filter_init(filter* obj){
-    obj->size = 4;
+void filter_init(filter* obj,int init_size){
+    obj->size = init_size/CAPACITY;
     obj->in_use = 0;
     obj->arr = malloc(obj->size*sizeof(b_filter));
     if(obj->arr==NULL){
