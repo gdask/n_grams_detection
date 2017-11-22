@@ -32,7 +32,7 @@ int na_ngram(ngram_array *obj, int obj_rank, int k);
 int max_rank(ngram_array *obj);
 
 /*this function returns -1 if ngram already in array or else the right position*/
-int na_lookup(ngram_array *obj, char* input_ngram, int len);
+void na_lookup(ngram_array *obj, char* input_ngram, int len);
 
 //Quicksort
 void quickSort(ngram_array obj[], int low, int high);

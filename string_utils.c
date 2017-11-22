@@ -115,9 +115,9 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     }
                     obj->buffer[i]='\0';
                     ret = strtol(&obj->buffer[2], &ptr, 10);
-                    //na_topk(na, ret);
+                    na_topk(na, ret);
                     
-                    na_topk_sort(na, ret);
+                    //na_topk_sort(na, ret);
                     na_reuse(na);
                 }
                 return lm_fetch_line(obj, na);  
@@ -155,15 +155,6 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
         obj->buffer[0]='A';
         obj->buffer[1]=' ';
         if(fgets(&obj->buffer[2],  obj->bufsize-2, obj->input)){
-            if(strcmp(&obj->buffer[2], "DYNAMIC")==0){
-                obj->file_status='D';
-                return lm_fetch_line(obj, na);  
-            }
-            else if(strcmp(&obj->buffer[2], "STATIC")==0){
-                obj->file_status='S';
-                return lm_fetch_line(obj, na);  
-            }
-
             /*if the space was not enough, i should allocate more memory(double my size) in order to fit eventually all the line*/
             while(complete_phrase(obj->buffer)==false){
                 //printf("Ready to make a realloc\n");
@@ -181,6 +172,14 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                 if(retbuf==NULL){ //something went wrong(EOF)
                     return false;
                 }
+            }
+            if(strcmp(&obj->buffer[2], "DYNAMIC\n")==0){
+                obj->file_status='D';
+                return lm_fetch_line(obj, na);  
+            }
+            else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
+                obj->file_status='S';
+                return lm_fetch_line(obj, na);  
             }
             //printf("line %s", obj->buffer);
         }
@@ -413,11 +412,7 @@ void rm_ngram_detected(result_manager* obj, ngram_array* na){
     obj->output_buffer[obj->first_available_slot-1]='\0';
     int len=0;
     len=obj->first_available_slot-current_index;
-    int pos=na_lookup(na, &obj->output_buffer[current_index], len);   
-    if(pos!=-1){
-        na_insert(na, &obj->output_buffer[current_index], pos, len);
-        //na_insert_at_the_end(na, &obj->output_buffer[current_index], len);
-    }
+    na_lookup(na, &obj->output_buffer[current_index], len);   
     /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
     memset(obj->word_buffer, 0, obj->bufsize);

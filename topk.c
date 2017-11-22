@@ -49,7 +49,7 @@ void na_reuse(ngram_array *obj){
 }
 
 /*checks if input_ngram is in na, if yes rank is augmented and return true else false*/
-int na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
+void na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
     int lower_bound = 0;
     int upper_bound = obj->first_available_slot-1;
     int middle = (lower_bound+upper_bound)/2;
@@ -66,13 +66,13 @@ int na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
                 //Array[middle] == input_ngram
                 //immidiatilly update rank
                 obj->Array[middle].rank ++;
-                return -1;
+                return; 
             }
             middle = (lower_bound+upper_bound)/2;
         
     }
     //this is the right position for insert the new ngram
-    return lower_bound;
+    na_insert(obj, input_ngram, lower_bound, len_ngram);
 }
 
 void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram){
@@ -95,12 +95,10 @@ void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram){
 }
 
 /*insert new ngram at the end, at first available slot*/
-void na_insert(ngram_array *obj, char* input_ngram, int goal_index, int len_ngram){
-    
+void na_insert(ngram_array *obj, char* input_ngram, int goal_index, int len_ngram){  
     /*double array*/
     if(obj->bufsize==goal_index || obj->first_available_slot==obj->bufsize){
         na_node* temp = realloc(obj->Array, 2*(obj->bufsize)*sizeof(na_node));
-        printf("Realloc\n");
         if(temp==NULL){
             fprintf(stderr,"Realloc Failed :: na_insert\n");
             exit(-1);
@@ -132,7 +130,7 @@ void na_append(na_node *obj, char* input_ngram, int len_ngram){
         fprintf(stderr,"na append :: Malloc failed\n");
         exit(-1);
     }
-    memmove(obj->ngram, input_ngram, len_ngram);
+    strncpy(obj->ngram, input_ngram, len_ngram);
     obj->rank=1;
 }
 
@@ -141,7 +139,7 @@ void na_topk(ngram_array *obj, int k){
     max=max_rank(obj);
     int newk;
     printf("Top: ");
-    while(k>0 && max>=0){
+    while(k>0 || max>=0){
         newk=na_ngram(obj, max, k);
         k=newk;
         max--;
@@ -162,13 +160,13 @@ int max_rank(ngram_array *obj){
 
 int na_ngram(ngram_array *obj, int obj_rank, int k){
     int i=0;
-    while(k!=0 && i<obj->first_available_slot){        
-        if(obj->Array[i].rank==obj_rank && k-1==0){
-            printf("%s", obj->Array[i].ngram);
+    while(i<obj->first_available_slot){        
+        if(obj->Array[i].rank==obj_rank && k==1){
+            printf("%s %d", obj->Array[i].ngram, obj->Array[i].rank);
             k--;
         }
         else if(obj->Array[i].rank==obj_rank){
-            printf("%s|", obj->Array[i].ngram);
+            printf("%s %d|", obj->Array[i].ngram, obj->Array[i].rank);
             k--;
         }
         i++;
