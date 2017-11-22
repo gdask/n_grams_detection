@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
 	filter set;
-	filter_init(&set);
+	filter_init(&set,500);
 	int i,counter;
 	clock_t start,stop;
 	void* input;
@@ -49,12 +49,12 @@ int main(int argc, char **argv) {
 	counter=0;
 	input=NULL;
 	start=clock();
-	for(i=0;i<1000000;i++){
+	for(i=0;i<10000000;i++){
 		counter+=(int)f_lookup(&set,input);
 		input++;
 	}
 	stop=clock();
-	printf("%d Checks in %d cycles\n",1000000,(int)(stop-start));
+	printf("%d Checks in %d cycles\n",10000000,(int)(stop-start));
 	printf("Expected: %d, Actual: %d\n\n",1000,counter);
 	filter_fin(&set);
 }

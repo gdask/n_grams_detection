@@ -352,9 +352,7 @@ void hyper_node_init(hyper_node* obj){
     }
     obj->vector_size = HYPER_VECTOR_INIT;
     obj->info_size = HYPER_DATA_INIT;
-    //obj->First_Available_Slot = 0;
     obj->Word_Info[0]=0;
-    //obj->entries = 0;
 }
 
 void hyper_node_fin(hyper_node* obj){
@@ -362,8 +360,11 @@ void hyper_node_fin(hyper_node* obj){
     free(obj->Word_Vector);
 }
 
-void hyper_node_insert(hyper_node* obj,trie_node* input){
+bool hyper_node_insert(hyper_node* obj,trie_node* input){
     //check for proper input: normal || leaf?
+    if(tn_is_leaf(input)==true){
+        return false;
+    }
     trie_node* current=input;
     int entries = 0; //INSERT IS VALID ONLY THE FIRST TIME,CAUSE OF THAT
     int First_Available_Slot = 0; //AND THAT
@@ -400,6 +401,7 @@ void hyper_node_insert(hyper_node* obj,trie_node* input){
     }
     //Destructs path
     tn_fin(input);
+    return true;
 }
 
 //takes argument the head of trie
@@ -411,8 +413,7 @@ bool tn_compress(trie_node* obj){
         if(obj->next.First_Available_Slot==0) return true;
         int i;
         for(i=0;i<obj->next.First_Available_Slot;i++){
-            if(tn_compress(&obj->next.Array[i])==true){
-                //fprintf(stderr,"%p, on %d index has hyper_node: %p\n",obj,i,&obj->next.Array[i]);
+            if(tn_compress(&obj->next.Array[i])==true && tn_is_normal(&obj->next.Array[i])==true){
                 hyper_node tmp;
                 hyper_node_init(&tmp);
                 hyper_node_insert(&tmp,&obj->next.Array[i]);
