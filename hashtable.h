@@ -10,27 +10,30 @@ typedef struct hashtable{
     int size; //m buckets 
     int init_size;
     int p; //pointer p 
-    int primary_pages;
+    int primary_size;
 }hashtable;
 
 
 //k: keys and m: number of children array size
 void hashtable_init(hashtable* ht, int k, int m);
-void hash_fin(hashtable* ht);
+void hashtable_fin(hashtable* obj);
 
 /*hash function for my string*/
 int hash_function(hashtable* obj, char* input_str);
+int hash_function_overflow(hashtable* obj, char* input_str);
 
 /*search in the table for <value>, returns pointer to carray*/
-void hash_search(hashtable* obj, char* input);
+loc_res hash_lookup(hashtable* obj, char* input);
 
 /*Insert*/
 void hashtable_insert(hashtable* obj, char* word);
 bool hash_append(hashtable* obj, char* word);
-void hash_expand(hashtable* obj);
+bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index);
 
-//overflow occures
-void hash_bucket_split(hashtable* obj);
+/*handles if overflow should happend*/
+void hashtable_overflow(hashtable* obj);
+void update_round(hashtable* obj);
 
+/*George complete copy*/
 void hash_redistribute(hashtable* obj);
 #endif

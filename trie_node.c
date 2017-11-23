@@ -337,7 +337,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
         }
         middle = (lower_bound+upper_bound)/2;
     }
-    //Input word not in array,should be placed in lower bound,IRENE CHECK
+    //Input word not in array,should be placed in lower bound
     result.index=lower_bound;
     return result;
 }
