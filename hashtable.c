@@ -6,7 +6,7 @@
 bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
     if(goal_index == obj->Size || obj->First_Available_Slot == obj->Size){
         ca_double(obj); 
-        return false; 
+        return true; 
     }
     else if(goal_index > obj->Size-1 || goal_index > obj->First_Available_Slot){
         fprintf(stderr,"ca_force_append called with out of bounds goal_index\n");
@@ -18,7 +18,7 @@ bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
     }
     obj->First_Available_Slot++;
     tn_leaf(&obj->Array[goal_index],input_word);
-    return true;
+    return false;
 }
 
 /*djb2, to turn a string to int*/
@@ -64,13 +64,27 @@ void hashtable_init(hashtable* obj, int ca_bucket_size, int bucket_size){
 }
 
 
-void hashtable_insert(hashtable* obj, char* word){
-    bool overflow;
-    overflow=hash_append(obj, word);
-    if(overflow==false){ //overflow should happend
+trie_node* hashtable_insert(hashtable* obj, char* word){
+    int key=hash_function(obj, word);
+    
+    /*If key is less than p then use hash function overflow(h2)*/
+    if(key<obj->p){
+        key=hash_function_overflow(obj, word);
+    }
+    /*find right position*/
+    loc_res res = ca_locate_bin(&obj->ca_bucket[key], word);
+    
+    bool overflow=false;
+    if(res.found==false){
+        overflow = ca_bucket_append(&obj->ca_bucket[key], word, res.index);
+    }
+    if(overflow==true){ //overflow should happend
         hashtable_overflow(obj);
     }
+
     update_round(obj);
+
+    return res.node_ptr;
 }
 
 void hashtable_fin(hashtable* obj){
@@ -79,23 +93,6 @@ void hashtable_fin(hashtable* obj){
         ca_fin(&obj->ca_bucket[i]);
     }
     free(obj->ca_bucket);
-}
-
-bool hash_append(hashtable* obj, char* word){
-    int key=hash_function(obj, word);
-    /*If key is less than p then use hash function overflow(h2)*/
-    if(key<obj->p){
-        key=hash_function_overflow(obj, word);
-    }
-    /*find right position*/
-    loc_res res = ca_locate_bin(&obj->ca_bucket[key], word);
-    
-    bool overflow;
-
-    if(res.found==false){
-        overflow=ca_bucket_append(&obj->ca_bucket[key], word, res.index);
-    }
-    return overflow;
 }
 
 void ca_bucket_delete(children_arr* obj,int goal_index){

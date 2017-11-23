@@ -26,8 +26,8 @@ int hash_function_overflow(hashtable* obj, char* input_str);
 loc_res hash_lookup(hashtable* obj, char* input);
 
 /*Insert*/
-void hashtable_insert(hashtable* obj, char* word);
-bool hash_append(hashtable* obj, char* word);
+trie_node* hashtable_insert(hashtable* obj, char* word);
+trie_node* hash_append(hashtable* obj, char* word, bool* overflow);
 bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index);
 
 /*handles if overflow should happend*/

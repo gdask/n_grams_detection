@@ -75,7 +75,21 @@ void na_lookup(ngram_array *obj, char* input_ngram, int len_ngram){
     na_insert(obj, input_ngram, lower_bound, len_ngram);
 }
 
+bool na_lookup_serial(ngram_array *obj, char* input_ngram){
+    int i=0;
+    for(i=0;i<obj->first_available_slot;i++){
+        if(obj->Array[i].ngram!=NULL){
+            if(strcmp(obj->Array[i].ngram, input_ngram)==0){
+                obj->Array[i].rank++;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram){
+    /*double array*/
     if(obj->first_available_slot==obj->bufsize){
         na_node* temp = realloc(obj->Array, 2*(obj->bufsize)*sizeof(na_node));
         if(temp==NULL){
@@ -87,10 +101,12 @@ void na_insert_at_the_end(ngram_array *obj, char* input_ngram, int len_ngram){
     }
 
     int goal_index= obj->first_available_slot;
+    bool found=na_lookup_serial(obj, input_ngram);
 
+    if(found==false){
     //find the right pos in table
-    na_append(&obj->Array[goal_index], input_ngram, len_ngram);
-   
+        na_append(&obj->Array[goal_index], input_ngram, len_ngram);
+    }   
     obj->first_available_slot++;
 }
 

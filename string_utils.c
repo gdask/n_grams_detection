@@ -115,9 +115,9 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     }
                     obj->buffer[i]='\0';
                     ret = strtol(&obj->buffer[2], &ptr, 10);
-                    na_topk(na, ret);
+                    //na_topk(na, ret);
                     
-                    //na_topk_sort(na, ret);
+                    na_topk_sort(na, ret);
                     na_reuse(na);
                 }
                 return lm_fetch_line(obj, na);  
@@ -412,7 +412,8 @@ void rm_ngram_detected(result_manager* obj, ngram_array* na){
     obj->output_buffer[obj->first_available_slot-1]='\0';
     int len=0;
     len=obj->first_available_slot-current_index;
-    na_lookup(na, &obj->output_buffer[current_index], len);   
+    na_lookup(na, &obj->output_buffer[current_index], len);
+    //na_insert_at_the_end(na, &obj->output_buffer[current_index], len);
     /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
     memset(obj->word_buffer, 0, obj->bufsize);
