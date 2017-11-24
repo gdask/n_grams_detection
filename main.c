@@ -4,6 +4,7 @@
 #include <time.h>
 #include "string_utils.h"
 #include "trie.h"
+#include "hashtable.h"
 
 int main(int argc,char* argv[]){
     if(argc!=5){
@@ -59,12 +60,15 @@ int main(int argc,char* argv[]){
     }
 
     //tn_print_subtree(db.head);
-    lm_init.file_status='S';
     if(lm_init.file_status=='S'){ //Static files only
         fprintf(stderr,"static\n");
-        trie_compress(&db);
+        //trie_compress(&db);
     }
     line_manager_fin(&lm_init);
+
+    hash_print(&db.zero_level);
+    return 0;
+
 
     line_manager lm;
     line_manager_init(&lm,query_file,'Q');

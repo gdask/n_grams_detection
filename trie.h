@@ -1,11 +1,13 @@
 #ifndef TRIE_H
 #define	TRIE_H
 
+#include "hashtable.h"
 #include "trie_node.h"
 #include "string_utils.h"
 #include "filters/bloom_filter.h"
 #include "filters/pointer_set.h"
 
+#define HASH_BUCKETS_INIT 8
 #define USE_BLOOM 0 //1 for bloom , 0 for pointer set
 #define FILTER_INIT_SIZE 500
 
@@ -14,6 +16,7 @@ struct trie{
     trie_node *head;
     int max_height;
     int ca_init_size;
+    hashtable zero_level;
     #if USE_BLOOM==1
     filter detected_nodes;
     #else

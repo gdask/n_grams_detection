@@ -13,9 +13,10 @@ void trie_init(trie* obj,int init_child_arr_size){
         fprintf(stderr,"Malloc failed in trie init\n");
         exit(-1);
     }
-    tn_head(obj->head,obj->ca_init_size);
+    //tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
     obj->dynamic = true;
+    hashtable_init(&obj->zero_level,HASH_BUCKETS_INIT,init_child_arr_size);
     #if USE_BLOOM == 1
     //filter_init(&obj->detected_nodes,1000);
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
@@ -29,8 +30,9 @@ void trie_init(trie* obj,int init_child_arr_size){
 }
 
 void trie_fin(trie* obj){
-    tn_fin(obj->head);
+    //tn_fin(obj->head);
     free(obj->head);
+    hashtable_fin(&obj->zero_level);
     #if USE_BLOOM == 1
     filter_fin(&obj->detected_nodes);
     #else
@@ -45,17 +47,22 @@ void trie_insert(trie* obj,line_manager* lm){
         return;
     }
     char* current_word = lm_fetch_word(lm);
-    trie_node* current_node = obj->head;
-    int height=0;
+    if(current_word==NULL) return;
+    fprintf(stderr,"%s\n", current_word);
+    trie_node* current_node = hashtable_insert(&obj->zero_level,current_word);
+    if(current_node==NULL){
+        fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
+        exit(-1);
+    }
+    int height=1;
+    current_word = lm_fetch_word(lm);
     while(current_word!=NULL){
         //fprintf(stderr,"WORD:%s\n",current_word);
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         height++;
         current_word = lm_fetch_word(lm);
     }
-    if(current_node!=obj->head){
-        tn_set_final(current_node);
-    }
+    tn_set_final(current_node);
     if(height > obj->max_height){
         obj->max_height = height;
     }
@@ -112,17 +119,27 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
 
     while(valid_ngram==true){
         rm_new_ngram(rm);
-        trie_node* current_node = obj->head;
         char* current_word = lm_fetch_word(lm);
+        if(current_word==NULL){
+            //valid_ngram = lm_fetch_ngram(lm);
+            //continue;
+            return;
+        }
+        loc_res current_node = hash_lookup(&obj->zero_level,current_word);
+        if(current_node.found==false){
+            valid_ngram= lm_fetch_ngram(lm);
+            continue;
+        }
+        current_word = lm_fetch_word(lm);
         while(current_word!=NULL){
-            current_node = tn_lookup(current_node,current_word);
-            if(current_node==NULL){
+            current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
+            if(current_node.node_ptr==NULL){
                 rm_ngram_undetected(rm);
                 break;
             }
             rm_append_word(rm,current_word);
-            if(current_node->mode=='s'){ //hyper node
-                hyper_node* tmp =(hyper_node*)current_node;
+            if(current_node.node_ptr->mode=='s'){ //hyper node
+                hyper_node* tmp =(hyper_node*)current_node.node_ptr;
                 if(tmp->Word_Info[0]>0){ //Final n_gram case
                     if(obj->ngram_inserted(&obj->detected_nodes,tmp->Word_Vector)==true){
                         rm_ngram_detected(rm, na);
@@ -131,8 +148,8 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                 trie_hyper_search(obj,lm,rm,na,tmp);
                 break;
             }
-            if(current_node->final==true){
-                if(obj->ngram_inserted(&obj->detected_nodes,current_node)==true){
+            if(current_node.node_ptr->final==true){
+                if(obj->ngram_inserted(&obj->detected_nodes,current_node.node_ptr)==true){
                     rm_ngram_detected(rm, na);
                 }
             }

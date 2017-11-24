@@ -15,7 +15,7 @@ typedef struct hashtable{
 
 
 //k: keys and m: number of children array size
-void hashtable_init(hashtable* ht, int k, int m);
+void hashtable_init(hashtable* ht, int buckets, int ca_init);
 void hashtable_fin(hashtable* obj);
 
 /*hash function for my string*/
@@ -36,4 +36,6 @@ void update_round(hashtable* obj);
 
 /*George complete copy*/
 void hash_redistribute(hashtable* obj);
+
+void hash_print(hashtable* obj);
 #endif
