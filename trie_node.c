@@ -315,13 +315,6 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
 
     while(lower_bound <= upper_bound){
         int cmp_res = strcmp(obj->Array[middle].Word,input_word);
-        /*if(obj->Array[middle].mode=='s'){
-            hyper_node* tmp = (hyper_node*) &obj->Array[middle];
-            cmp_res = strcmp(tmp->Word_Vector,input_word);
-        }
-        else{
-            cmp_res = strcmp(obj->Array[middle].Word,input_word);
-        }*/
         if(cmp_res < 0){
             lower_bound = middle + 1;
         }

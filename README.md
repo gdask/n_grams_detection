@@ -2,17 +2,27 @@
 Software Development Project 2017 @ NKUA (informatics &amp; telcommunications)
 Implemented on C.
 
-#### Trie_node:   Implements the 'Trie_node' data stracture.
-Trie_nodes exists in three states:
+#### Trie_node:
+Trie_nodes exists in two states:
 * Leaf,is a trie node with a stored word,but with unitialized children array.
 * Normal,is a trie node with a stored word and initialized children array.
-* Head, no word stored,but initialized children array.
-    Each state is initialized by functions tn_leaf,tn_normal,tn_head.
+    Each state is initialized by functions tn_leaf,tn_normal.
     We could change a node state from leaf to normal and vica versa with functions tn_leaf_to_normal and tn_normal_to_leaf.
     Every dynamicly allocated memory from a trie_node is freed after tn_fin.
 * tn_lookup(trie_node*,input_word) 'asks' if a trie_node has any child with stored_word==input_word.
     If the child exists a pointer to that child trie_node is returned,otherwise NULL is returned.
-* tn_insert(trie_node* current,input_word) adds a new leaf at current trie node,with Word=input_word ifthat doesnt exists,and returns a pointer at trie_node with Word==input_word.
+* tn_insert(trie_node* current,input_word) adds a new leaf at current trie node,with Word=input_word if that doesnt exists,and returns a pointer at trie_node with Word==input_word.
+
+At second part of project,a new type of node is introduced the Hyper Node. Hyper nodes are different but compitable with trie nodes.
+
+#### Trie:
+A trie could be static or dynamic.
+Dynamic tries supports:
+* Insert: Gets an entire line from line manager as n_gram and insert it,if that n_gram is not already part of trie.
+* Search: Gets an entire line from line manager,searches for every possible n_gram in that line avoiding duplicates and gives directives at result manager to print the result.
+* Delete: Gets an entire line as n_gram from line manager and deletes it,if that n_gram is part of trie.
+
+Static tries: A dynamic trie could be transormed into static with compress() function. That function use a dfs recursive search to transform any path without fork in trie,into a hyper_node that is a trie node which stores a sentence instead of just one word. Static trie support search but it doesnt support insert or delete.
 
 #### String_Utils: 
 Line Manager:
@@ -35,22 +45,40 @@ Result Manager:
 
 #### Filters
 Bloom Filter: 
-    It comes with a test @ /filter/bloom_testing that checks how many false positives we have for 1000 inserted elements and 10,000,000 checks.
-    In bloom_filter.h you can choose among 3 configurations for <b>k,m,n</b> and an option for the Mitzenmacher optimization that calls only two times the hash functions.
-    The best result comes from the third configuration with the optimization disabled.
-    If we have to insert more entities than <b>n</b> ,then we use more than in one bloom filter without a significant increase on false positive ratio.
+    It comes with a test @ /filter/bloom_testing that checks how many false positives we have in 1000 inserted elements and 10,000,000 checks. At file bloom_filter.h you can choose among 3 configurations for <b>k,m,n</b> and an option for the Mitzenmacher optimization that calls only two times the hash functions.Best result comes from the third configuration with the optimization disabled. If we have to insert more entities than <b>n</b> ,then we use more than in one bloom filter without a significant increase on false positive ratio. We used murmur3 as hash function at bloom filter implementation. Murmur3 is fast and has really good distribution and randomness, so its a good choice for a bloom filter.
 
+Pointer_set: 
+    During the query execution,we could identify every unique n_gram from the pointer of its last trie_node. So we use that property to filter any duplicate n_gram in a query. Pointer set append has O(nlogn) complexity. Testing proved that pointer set is faster than bloom filter. So we end up use this than bloom filter.
 
+#### Hashtable:
 
-#### i7 @ 1,8 ghz & hdd:
+#### Top_K:
+
+#### Part 2 medium dynamic dataset:
+##### i7 @ 1,8 ghz & hdd:
+* Elapsed time without optimization: _ sec
+* Elapsed time with O3 optimization: _ sec
+##### i5 @ 2,4 ghz & ssd (on virtual machine):
+* Elapsed time without optimization: _ sec
+* Elapsed time with O3 optimization: _ sec
+#### Part 2 medium static dataset:
+##### i7 @ 1,8 ghz & hdd:
+* Elapsed time without optimization: _ sec
+* Elapsed time with O3 optimization: _ sec
+##### i5 @ 2,4 ghz & ssd (on virtual machine):
+* Elapsed time without optimization: _ sec
+* Elapsed time with O3 optimization: _ sec
+
+#### Part 1 small dataset:
+##### i7 @ 1,8 ghz & hdd:
 * Elapsed time without optimization: 3.913862 sec
 * Elapsed time with O3 optimization: 2.378355 sec
 
-#### i5 @ 2,4 ghz & ssd (on virtual machine):
+##### i5 @ 2,4 ghz & ssd (on virtual machine):
 * Elapsed time without optimization: 1.913981 sec
 * Elapsed time with O3 optimization: 1.291364 sec
 
-#### linux29.di.uoa.gr:
+##### linux29.di.uoa.gr (old machine):
 * Elapsed time without optimization: 1.501372 sec
 * Elapsed time with O3 optimization: 1.045464 sec
 

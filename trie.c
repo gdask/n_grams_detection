@@ -48,7 +48,7 @@ void trie_insert(trie* obj,line_manager* lm){
     }
     char* current_word = lm_fetch_word(lm);
     if(current_word==NULL) return;
-    fprintf(stderr,"%s\n", current_word);
+    //fprintf(stderr,"%s\n", current_word);
     trie_node* current_node = hashtable_insert(&obj->zero_level,current_word);
     if(current_node==NULL){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
@@ -120,19 +120,16 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
     while(valid_ngram==true){
         rm_new_ngram(rm);
         char* current_word = lm_fetch_word(lm);
-        if(current_word==NULL){
-            //valid_ngram = lm_fetch_ngram(lm);
-            //continue;
-            return;
-        }
-        loc_res current_node = hash_lookup(&obj->zero_level,current_word);
-        if(current_node.found==false){
-            valid_ngram= lm_fetch_ngram(lm);
-            continue;
-        }
-        current_word = lm_fetch_word(lm);
+        bool hash_search = true;
+        loc_res current_node;
         while(current_word!=NULL){
-            current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
+            if(hash_search==true){
+                current_node = hash_lookup(&obj->zero_level,current_word);
+                hash_search = false;
+            }
+            else{
+                current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
+            }
             if(current_node.node_ptr==NULL){
                 rm_ngram_undetected(rm);
                 break;
