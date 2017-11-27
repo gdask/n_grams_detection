@@ -24,6 +24,8 @@ int hash_function_overflow(hashtable* obj, char* input_str);
 
 /*search in the table for <value>, returns pointer to carray*/
 loc_res hash_lookup(hashtable* obj, char* input);
+loc_res hashtable_search(hashtable* obj, char* word, int* bucket);
+bool split(hashtable* obj, char* input);
 
 /*Insert*/
 trie_node* hashtable_insert(hashtable* obj, char* word);
@@ -35,7 +37,7 @@ void hashtable_overflow(hashtable* obj);
 void update_round(hashtable* obj);
 
 /*George complete copy*/
-void hash_redistribute(hashtable* obj);
+int hash_redistribute(hashtable* obj, char* word);
 
 void hash_print(hashtable* obj);
 #endif

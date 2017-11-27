@@ -66,8 +66,8 @@ int main(int argc,char* argv[]){
     }
     line_manager_fin(&lm_init);
 
-    hash_print(&db.zero_level);
-    return 0;
+    //hash_print(&db.zero_level);   
+    //return 0;
 
 
     line_manager lm;

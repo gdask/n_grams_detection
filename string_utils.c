@@ -118,8 +118,8 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     //na_topk(na, ret);
                     
                     na_topk_sort(na, ret);
+                    na_reuse(na);
                 }
-                na_reuse(na);
                 return lm_fetch_line(obj, na);  
             }
             /*keep line status, check if ID is valid*/

@@ -6,7 +6,7 @@
 bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
     bool doubled=false;
     if(goal_index == obj->Size || obj->First_Available_Slot == obj->Size){
-        ca_double(obj); 
+        ca_double(obj);
         doubled= true; 
     }
     else if(goal_index > obj->Size-1 || goal_index > obj->First_Available_Slot){
@@ -18,14 +18,14 @@ bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
         memmove(&obj->Array[goal_index+1],&obj->Array[goal_index],movable);
     }
     obj->First_Available_Slot++;
-    tn_leaf(&obj->Array[goal_index],input_word);
+    tn_leaf(&obj->Array[goal_index], input_word);
     return doubled;
 }
 
 /*djb2, to turn a string to int*/
-unsigned long str_to_int(const char *str){
+unsigned long str_to_int(char *str){
     unsigned long hash = 5381;
-    int c;
+    //int c;
     char* input=str;
 
     //while (c = *str++){
@@ -47,7 +47,7 @@ int hash_function(hashtable* obj, char* str){
 int hash_function_overflow(hashtable* obj, char*str){
     unsigned long code;
     code=str_to_int(str);
-    return code % (obj->size); //f(k)% size
+    return code % (2*obj->init_size); //f(k)% size
 }
 
 void hashtable_init(hashtable* obj, int ca_bucket_size, int bucket_size){
@@ -60,6 +60,7 @@ void hashtable_init(hashtable* obj, int ca_bucket_size, int bucket_size){
     int i;
     for(i=0; i < ca_bucket_size; i++){
         //allocate ca_bucket
+        //fprintf(stderr, "Initialized bucket %d\n", i);
         ca_init(&obj->ca_bucket[i], bucket_size);
     }
     obj->round=0;
@@ -67,43 +68,6 @@ void hashtable_init(hashtable* obj, int ca_bucket_size, int bucket_size){
     obj->p=0;
     obj->primary_size= bucket_size;
     obj->init_size= ca_bucket_size;
-}
-
-
-trie_node* hashtable_insert(hashtable* obj, char* word){
-    int key=hash_function(obj, word);
-    fprintf(stderr, "key: %d, %s\n", key, word);
-    /*If key is less than p then use hash function overflow(h2)*/
-    if(key<obj->p){
-        key=hash_function_overflow(obj, word);
-    }
-    /*find right position*/
-    loc_res res = ca_locate_bin(&obj->ca_bucket[key], word);
-    bool overflow=false;
-    if(res.found==false){
-        overflow = ca_bucket_append(&obj->ca_bucket[key], word, res.index);
-    }
-    if(overflow==true){ //overflow should happend
-            /*Expand table for one bucket*/
-        children_arr* temp = (children_arr*) realloc(obj->ca_bucket, (obj->size+1)*sizeof(children_arr));
-        if(temp==NULL){
-            fprintf(stderr,"Realloc Failed\n");
-            exit(-1);
-        }
-        obj->ca_bucket= temp;
-        obj->size = obj->size+1;
-
-        int new=obj->size-1;
-        /*init new bucket*/
-        ca_init(&obj->ca_bucket[new], obj->primary_size);
-        /*Redistribute trie_nodes between the new bucket and the bucket number p*/
-        hash_redistribute(obj);
-        update_round(obj);
-    }
-
-    res = hash_lookup(obj, word);
-    fprintf(stderr, "ptr:%s\n", res.node_ptr);
-    return res.node_ptr;
 }
 
 void hashtable_fin(hashtable* obj){
@@ -114,7 +78,42 @@ void hashtable_fin(hashtable* obj){
     free(obj->ca_bucket);
 }
 
-void ca_bucket_delete(children_arr* obj,int goal_index){
+trie_node* hashtable_insert(hashtable* obj, char* word){
+    /*find if word is in or not, return also right position*/
+    //fprintf(stderr, "Word:%s size: %d init_size: %d\n", word, obj->size, obj->init_size);
+    int pos=0;
+    loc_res result = hashtable_search(obj, word, &pos); 
+    bool overflow=false;
+    bool changed=false;
+    if(result.found==false){
+        overflow = ca_bucket_append(&obj->ca_bucket[pos], word, result.index);
+        //fprintf(stderr,"%s\n", obj->ca_bucket[pos].Array[result.index].Word);
+    }
+    if(overflow==true){ //overflow occures
+        //fprintf(stderr,"overflow\n");
+        /*Expand table for one bucket*/
+        children_arr* temp = (children_arr*) realloc(obj->ca_bucket, (obj->size+1)*sizeof(children_arr));
+        if(temp==NULL){
+            fprintf(stderr,"Realloc Failed\n");
+            exit(-1);
+        }
+        obj->ca_bucket= temp;
+        changed= split(obj, word);
+        result = hashtable_search(obj, word, &pos);
+        obj->size++;
+    }
+    else{
+        result = hashtable_search(obj, word, &pos);
+    }
+    update_round(obj);
+    //fprintf(stderr,"res %p\n", result.node_ptr);
+    //fprintf(stderr,"pos %d\n", pos);
+    return result.node_ptr;
+    //in case key==p maybe it changed pos
+
+}
+
+void ca_bucket_delete(children_arr* obj, int goal_index){
     if(goal_index == obj->First_Available_Slot-1){
         //tn_fin(&obj->Array[goal_index]);
         obj->First_Available_Slot--;
@@ -124,24 +123,6 @@ void ca_bucket_delete(children_arr* obj,int goal_index){
     size_t movable =(obj->First_Available_Slot-goal_index-1)*sizeof(trie_node);
     memmove(&obj->Array[goal_index],&obj->Array[goal_index+1],movable);
     obj->First_Available_Slot--;
-}
-
-void hashtable_overflow(hashtable* obj){
-    /*Expand table for one bucket*/
-    children_arr* temp = (children_arr*) realloc(obj->ca_bucket, (obj->size+1)*sizeof(children_arr));
-    if(temp==NULL){
-        fprintf(stderr,"Realloc Failed\n");
-        exit(-1);
-    }
-    obj->ca_bucket= temp;
-    obj->size = obj->size+1;
-
-    int new=obj->size-1;
-    /*init new bucket*/
-    ca_init(&obj->ca_bucket[new], obj->primary_size);
-    /*Redistribute trie_nodes between the new bucket and the bucket number p*/
-    hash_redistribute(obj);
-    
 }
 
 /*By saving init_size, I save my program from computing 2^round*/
@@ -157,40 +138,68 @@ void update_round(hashtable* obj){
     }
 }
 
-void hash_redistribute(hashtable* obj){
-    /*take all trie nodes from children array and check if it can be move to new bucket*/
-    int key=obj->p;
-    int i=0,movable=0;
-    fprintf(stderr, "FAS: %d\n", obj->ca_bucket[key].First_Available_Slot);
-    while(i < obj->ca_bucket[key].First_Available_Slot){
-        char* word=  obj->ca_bucket[key].Array[i].Word;
-        int key_res=hash_function_overflow(obj, word);
-        fprintf(stderr, "key: %d size: %d\n", key_res, obj->size);
-        if(key_res!=obj->p){
-            //GEORGE, make the move between obj->ca_bucket[key].Array[i] to obj->ca_bucket[obj->size-1]
-            ca_bucket_append(&obj->ca_bucket[obj->size-1],"tmp",movable);
-            free(obj->ca_bucket[obj->size-1].Array[movable].Word);
-            obj->ca_bucket[obj->size-1].Array[movable]=obj->ca_bucket[key].Array[i];
+//Spit happend between bucket obj->p and new bucket(size)
+bool split(hashtable* obj, char *input){
+    //empty page is added to the overflow
+    ca_init(&obj->ca_bucket[obj->size], obj->primary_size);
+    //fprintf(stderr, "Initialized bucket %d \n", obj->size);
+    //the search values mapped into obj->p (using hash_function) now distributed between bucket obj->p 
+    //and size using hash_function overflow
+    int p=obj->p;
+    int i=0, movable=0;
+    bool changed=false;
+    while(i < obj->ca_bucket[p].First_Available_Slot){
+        char* word = obj->ca_bucket[p].Array[i].Word;
+        int key_res= hash_function_overflow(obj, word);
+        if(key_res==obj->size){
+            if(strcmp(word, input)==0){
+                changed= true; 
+                fprintf(stderr,"Maybe changed\n");  
+            }
+            ca_bucket_append(&obj->ca_bucket[obj->size],"tmp",movable);
+            free(obj->ca_bucket[obj->size].Array[movable].Word);
+            obj->ca_bucket[obj->size].Array[movable]=obj->ca_bucket[p].Array[i];
             movable++;
-            ca_bucket_delete(&obj->ca_bucket[key],i);
+            ca_bucket_delete(&obj->ca_bucket[p],i);
         }
         i++;
     }
-    obj->ca_bucket[obj->size-1].First_Available_Slot=movable;
+    obj->ca_bucket[obj->size].First_Available_Slot=movable;
+    return changed;
 }
 
 /*return trie_node result
 There are 2 options, word used hash_function or word used hash_function_overflow */
 loc_res hash_lookup(hashtable* obj, char* word){
+    int pos=0;
+    loc_res result=hashtable_search(obj, word, &pos);
+    return result;
+}
+
+loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
     int key=hash_function(obj, word);
-    loc_res result=ca_locate_bin(&obj->ca_bucket[key], word);
-    
-    /*if not found check other hashfunction*/
-    if(result.found==false){
+    loc_res result;
+    //fprintf(stderr, "Word: %s \n", word);
+    //fprintf(stderr, "P: %d \n", obj->p);
+    //fprintf(stderr, "key: %d \n", key);
+    if(key>=obj->p){
+        //choose bucket h(word) since bucket has not been split yet in current round 
+        //fprintf(stderr, "Bucket: %d \n", key);
+        result=ca_locate_bin(&obj->ca_bucket[key], word);
+        //fprintf(stderr, "res: %d %s\n", result.index, obj->ca_bucket[key].Array[result.index].Word);
+    }
+    else{
+        //choose bucket from h_overflow(word)
         key=hash_function_overflow(obj, word);
+        //fprintf(stderr, "Bucket: %d\n", key);
+        if(key>=obj->size){
+            key=obj->size-1;
+        }
+        //fprintf(stderr, "Bucket: %d\n", key);
         result=ca_locate_bin(&obj->ca_bucket[key], word);
     }
-
+    *bucket=key;
+    //fprintf(stderr, "size: %d \n",obj->size);
     return result;
 }
 

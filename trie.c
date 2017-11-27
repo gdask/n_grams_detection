@@ -16,7 +16,7 @@ void trie_init(trie* obj,int init_child_arr_size){
     //tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
     obj->dynamic = true;
-    hashtable_init(&obj->zero_level,HASH_BUCKETS_INIT,init_child_arr_size);
+    hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
     #if USE_BLOOM == 1
     //filter_init(&obj->detected_nodes,1000);
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
