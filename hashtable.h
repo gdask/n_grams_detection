@@ -10,6 +10,7 @@ typedef struct hashtable{
     int size; //m buckets 
     int init_size;
     int p; //pointer p 
+    int old_p;
     int primary_size;
 }hashtable;
 

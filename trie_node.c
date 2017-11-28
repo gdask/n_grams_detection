@@ -318,6 +318,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
 
     while(lower_bound <= upper_bound){
         int cmp_res = strcmp(obj->Array[middle].Word,input_word);
+        
         if(cmp_res < 0){
             lower_bound = middle + 1;
         }

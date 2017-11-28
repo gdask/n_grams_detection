@@ -41,7 +41,7 @@ int main(int argc,char* argv[]){
     start = clock();
 
     trie db;
-    trie_init(&db,5);
+    trie_init(&db,2);
 
     //Ngrams array
     ngram_array na;

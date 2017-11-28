@@ -98,14 +98,19 @@ trie_node* hashtable_insert(hashtable* obj, char* word){
             exit(-1);
         }
         obj->ca_bucket= temp;
+        update_round(obj);
         changed= split(obj, word);
-        result = hashtable_search(obj, word, &pos);
+        //result = hashtable_search(obj, word, &pos);
         obj->size++;
+        if(obj->p==0){
+            obj->init_size=obj->size;
+        }
+        result = hashtable_search(obj, word, &pos);
+        //update_round(obj);
     }
     else{
         result = hashtable_search(obj, word, &pos);
     }
-    update_round(obj);
     //fprintf(stderr,"res %p\n", result.node_ptr);
     //fprintf(stderr,"pos %d\n", pos);
     return result.node_ptr;
@@ -128,10 +133,12 @@ void ca_bucket_delete(children_arr* obj, int goal_index){
 /*By saving init_size, I save my program from computing 2^round*/
 void update_round(hashtable* obj){
     /*Checks if new_size is divined by init_size pointer p ++*/
-    if(obj->p==obj->init_size){
+    if(obj->p==obj->init_size-1){
+        //fprintf(stderr, "Round change \n");
+        obj->old_p=obj->p;
         obj->p=0;
         obj->round++;
-        obj->init_size=obj->size;
+        //obj->init_size=obj->size;
     }
     else{
         obj->p++;
@@ -148,19 +155,31 @@ bool split(hashtable* obj, char *input){
     int p=obj->p;
     int i=0, movable=0;
     bool changed=false;
+    if(p==0){
+        //round is updated, so you need old p
+        p=obj->init_size-1;
+    }
+    else{
+        p--;
+    }
+    //fprintf(stderr, "p is %d %d\n", p, obj->ca_bucket[p].First_Available_Slot);
+    //int end=obj->ca_bucket[p].First_Available_Slot;
     while(i < obj->ca_bucket[p].First_Available_Slot){
         char* word = obj->ca_bucket[p].Array[i].Word;
         int key_res= hash_function_overflow(obj, word);
-        if(key_res==obj->size){
+        //fprintf(stderr,"Split: Word: %s, key:%d p: %d size: %d\n",word, key_res, p, obj->size);
+        if(key_res != p){
+            //key_res=hash_function_overflow(obj, word);
             if(strcmp(word, input)==0){
                 changed= true; 
-                fprintf(stderr,"Maybe changed\n");  
+                //fprintf(stderr,"Maybe changed\n");  
             }
             ca_bucket_append(&obj->ca_bucket[obj->size],"tmp",movable);
             free(obj->ca_bucket[obj->size].Array[movable].Word);
             obj->ca_bucket[obj->size].Array[movable]=obj->ca_bucket[p].Array[i];
             movable++;
             ca_bucket_delete(&obj->ca_bucket[p],i);
+            continue;
         }
         i++;
     }
@@ -179,23 +198,26 @@ loc_res hash_lookup(hashtable* obj, char* word){
 loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
     int key=hash_function(obj, word);
     loc_res result;
-    //fprintf(stderr, "Word: %s \n", word);
+    int p=obj->p;
+    //fprintf(stderr, "In search %s \n", word);
     //fprintf(stderr, "P: %d \n", obj->p);
     //fprintf(stderr, "key: %d \n", key);
-    if(key>=obj->p){
+    int k=hash_function_overflow(obj, word);
+    //fprintf(stderr, "key_over: %d\n", k);
+    //if(p==0){ 
+      //  p=obj->old_p;
+    //}
+    if(key >= p){
         //choose bucket h(word) since bucket has not been split yet in current round 
         //fprintf(stderr, "Bucket: %d \n", key);
         result=ca_locate_bin(&obj->ca_bucket[key], word);
         //fprintf(stderr, "res: %d %s\n", result.index, obj->ca_bucket[key].Array[result.index].Word);
     }
-    else{
+    else if(key<p){
         //choose bucket from h_overflow(word)
         key=hash_function_overflow(obj, word);
         //fprintf(stderr, "Bucket: %d\n", key);
-        if(key>=obj->size){
-            key=obj->size-1;
-        }
-        //fprintf(stderr, "Bucket: %d\n", key);
+        //fprintf(stderr, "%d\n", obj->ca_bucket[key].Initialized);
         result=ca_locate_bin(&obj->ca_bucket[key], word);
     }
     *bucket=key;
@@ -205,13 +227,13 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
 
 void hash_print(hashtable* obj){
     fprintf(stderr,"Hashtable on %p has %d buckets:\n",obj,obj->size);
-
     int i;
     for(i=0;i<obj->size;i++){
-        fprintf(stderr,"Bucket on %p with %d trie nodes\n",&obj->ca_bucket[i],obj->ca_bucket[i].First_Available_Slot);
+        fprintf(stderr,"Bucket on %d:\n",i);
         int j;
         for(j=0;j<obj->ca_bucket[i].First_Available_Slot;j++){
-            tn_print_subtree(&obj->ca_bucket[i].Array[j]);
+            fprintf(stderr, "%s|", obj->ca_bucket[i].Array[j].Word);
         }
+        fprintf(stderr, "\n");
     }
 }
