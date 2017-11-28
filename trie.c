@@ -78,14 +78,23 @@ bool trie_delete(trie* obj,line_manager* lm){
         return false;
     }
 
+    int hash_bucket = 0;
     loc_res current;
     current.node_ptr = obj->head;
+    //current = hashtable_search(&obj->zero_level,current_word,&hash_bucket);
+    //if(current.found==false) return false;
+    //current.node_ptr = &obj->zero_level.ca_bucket[hash_bucket];
 
-    trie_node* last_fork = obj->head;
+    children_arr* last_fork = &obj->head->next;
+    //trie_node* last_fork = current.node_ptr;
     int critical_index = -1;
     bool get_critical_index = true;
+    bool hash_search = true;
 
     while(current_word!=NULL){
+        if(hash_search==true){
+            
+        }
         current = ca_locate_bin(&current.node_ptr->next,current_word);
         if(current.found == false){
             //N_gram didnt found,nothing changes in trie
@@ -96,7 +105,7 @@ bool trie_delete(trie* obj,line_manager* lm){
             get_critical_index=false;
         }
         if(tn_has_fork(current.node_ptr)==true){
-            last_fork = current.node_ptr;
+            last_fork = &current.node_ptr->next;
             get_critical_index=true;
         }
         current_word = lm_fetch_word(lm);
@@ -107,7 +116,7 @@ bool trie_delete(trie* obj,line_manager* lm){
     }
     else{
         //deletes entire path from last_fork to leaf
-        ca_force_delete(&last_fork->next,critical_index);
+        ca_force_delete(last_fork,critical_index);
     }
     return true;
 }
