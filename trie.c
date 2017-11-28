@@ -80,22 +80,20 @@ bool trie_delete(trie* obj,line_manager* lm){
 
     int hash_bucket = 0;
     loc_res current;
-    current.node_ptr = obj->head;
-    //current = hashtable_search(&obj->zero_level,current_word,&hash_bucket);
-    //if(current.found==false) return false;
-    //current.node_ptr = &obj->zero_level.ca_bucket[hash_bucket];
-
-    children_arr* last_fork = &obj->head->next;
-    //trie_node* last_fork = current.node_ptr;
+    children_arr* last_fork;
     int critical_index = -1;
     bool get_critical_index = true;
     bool hash_search = true;
-
+    
     while(current_word!=NULL){
         if(hash_search==true){
-            
+            hash_search= false;
+            current = hashtable_search(&obj->zero_level,current_word,&hash_bucket);
+            last_fork = &obj->zero_level.ca_bucket[hash_bucket];
         }
-        current = ca_locate_bin(&current.node_ptr->next,current_word);
+        else{
+            current = ca_locate_bin(&current.node_ptr->next,current_word);
+        }
         if(current.found == false){
             //N_gram didnt found,nothing changes in trie
             return false;

@@ -304,7 +304,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     result.found=false;
     result.node_ptr=NULL;
     if(obj->Array==NULL){
-        fprintf(stderr, "Null in loc bin");
+        fprintf(stderr, "Null in loc bin\n");
         exit(-1);
     }
     if(obj->Initialized==false){
