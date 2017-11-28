@@ -52,7 +52,6 @@ struct trie_node {
 //Initilalizers for different purposes
 void tn_leaf(trie_node* obj,char* input_word);
 void tn_normal(trie_node* obj,int init_child_size,char* input_word);
-void tn_head(trie_node* obj,int init_child_size);
 //Deallocates dynamicly allocated memory
 void tn_fin(trie_node* obj);
 //Queries functions
@@ -70,7 +69,6 @@ void tn_normal_to_leaf(trie_node* obj);
 //Check functions
 bool tn_is_leaf(trie_node* obj);
 bool tn_is_normal(trie_node* obj);
-bool tn_is_head(trie_node* obj);
 //Debug purpose printing function
 void tn_print_subtree(trie_node* obj);
 

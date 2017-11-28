@@ -13,7 +13,6 @@
 
 struct trie{
     bool dynamic;
-    trie_node *head;
     int max_height;
     int ca_init_size;
     hashtable zero_level;

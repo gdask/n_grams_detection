@@ -8,17 +8,10 @@ void trie_init(trie* obj,int init_child_arr_size){
         exit(-1);
     }
     obj->ca_init_size = init_child_arr_size;
-    obj->head = (trie_node*)malloc(sizeof(trie_node));
-    if(obj->head==NULL){
-        fprintf(stderr,"Malloc failed in trie init\n");
-        exit(-1);
-    }
-    //tn_head(obj->head,obj->ca_init_size);
     obj->max_height = 0;
     obj->dynamic = true;
     hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
     #if USE_BLOOM == 1
-    //filter_init(&obj->detected_nodes,1000);
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
     obj->reuse_filter = (void*)&f_reuse;
     obj->ngram_inserted = (void*)&f_append;
@@ -30,8 +23,6 @@ void trie_init(trie* obj,int init_child_arr_size){
 }
 
 void trie_fin(trie* obj){
-    //tn_fin(obj->head);
-    free(obj->head);
     hashtable_fin(&obj->zero_level);
     #if USE_BLOOM == 1
     filter_fin(&obj->detected_nodes);
@@ -48,7 +39,6 @@ void trie_insert(trie* obj,line_manager* lm){
     }
     char* current_word = lm_fetch_word(lm);
     if(current_word==NULL) return;
-    //fprintf(stderr,"%s\n", current_word);
     trie_node* current_node = hashtable_insert(&obj->zero_level,current_word);
     if(current_node==NULL){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
@@ -57,7 +47,6 @@ void trie_insert(trie* obj,line_manager* lm){
     int height=1;
     current_word = lm_fetch_word(lm);
     while(current_word!=NULL){
-        //fprintf(stderr,"WORD:%s\n",current_word);
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         height++;
         current_word = lm_fetch_word(lm);
@@ -148,8 +137,8 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                     if(obj->ngram_inserted(&obj->detected_nodes,tmp->Word_Vector)==true){
                         rm_ngram_detected(rm, na);
                     }
+                    trie_hyper_search(obj,lm,rm,na,tmp);
                 }
-                trie_hyper_search(obj,lm,rm,na,tmp);
                 break;
             }
             if(current_node.node_ptr->final==true){
@@ -157,7 +146,6 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
                     rm_ngram_detected(rm, na);
                 }
             }
-            //CHECK CASE OF HYPER NODE HERE
             current_word = lm_fetch_word(lm);
         }
         valid_ngram=lm_fetch_ngram(lm);
@@ -213,5 +201,13 @@ void trie_compress(trie* obj){
         return;
     }
     obj->dynamic = false;
-    tn_compress(obj->head);
+    //tn_compress(obj->head);
+    //tn_compress every trie node on hashtable
+    int i;
+    for(i=0;i<obj->zero_level.size;i++){
+        int j;
+        for(j=0;j<obj->zero_level.ca_bucket->First_Available_Slot;j++){
+            tn_compress(&obj->zero_level.ca_bucket->Array[j]);
+        }
+    }
 }
