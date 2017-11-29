@@ -108,7 +108,8 @@ bool trie_delete(trie* obj,line_manager* lm){
     return true;
 }
 
-void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+    clock_t start = clock();
     bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
     obj->reuse_filter(&obj->detected_nodes);
@@ -151,6 +152,7 @@ void trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na)
         valid_ngram=lm_fetch_ngram(lm);
     }
     rm_completed(rm);
+    return clock() - start;
 }
 
 void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
