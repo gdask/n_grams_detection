@@ -23,12 +23,12 @@ void tn_normal(trie_node* obj,int init_child_size,char* input_word){
     ca_init(&obj->next,init_child_size);
 }
 
-void tn_head(trie_node* obj,int init_child_size){
+/*void tn_head(trie_node* obj,int init_child_size){
     obj->next.Initialized=false;
     obj->Word=NULL;
     obj->mode = 'h';
     ca_init(&obj->next,init_child_size);
-}
+}*/
 
 void tn_leaf_to_normal(trie_node* obj,int init_child_size){
     #if DEBUG != 0
@@ -66,12 +66,12 @@ bool tn_is_normal(trie_node* obj){
     return false;
 }
 
-bool tn_is_head(trie_node* obj){
+/*bool tn_is_head(trie_node* obj){
     if(obj->mode=='h' && obj->next.Initialized==true){
         return true;
     }
     return false;
-}
+}*/
 
 void tn_fin(trie_node* obj){
     if(obj->mode=='s'){
@@ -89,7 +89,7 @@ void tn_fin(trie_node* obj){
 
 trie_node* tn_lookup(trie_node* obj,char* input_word){
     #if DEBUG != 0
-    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
+    if(tn_is_leaf(obj)!=true && tn_is_normal(obj)!=true){
         fprintf(stderr,"tn lookup called on a non valid trie_node object");
         exit(-1);
     }
@@ -104,7 +104,7 @@ trie_node* tn_lookup(trie_node* obj,char* input_word){
 
 trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     #if DEBUG != 0
-    if(tn_is_leaf(obj)!=true && tn_is_head(obj)!=true && tn_is_normal(obj)!=true){
+    if(tn_is_leaf(obj)!=true && tn_is_normal(obj)!=true){
         fprintf(stderr,"tn insert called on a non valid trie_node object");
         exit(-1);
     }
@@ -126,24 +126,13 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
 }
 
 void tn_set_final(trie_node* obj){
-    #if DEBUG != 0
-    if(tn_is_head(obj)==true){
-        fprintf(stderr,"tn_is_head called on a head trie node\n");
-        exit(-1);
-    }
-    #endif
     obj->final=true;
 }
 
 void tn_unset_final(trie_node* obj){
-    #if DEBUG != 0
-    if(tn_is_head(obj)==true){
-        fprintf(stderr,"tn_is_head called on a head trie node\n");
-        exit(-1);
-    }
-    #endif
     obj->final=false;
 }
+
 // A node has fork when has 2 or more entries, or if it has at least one child & is a final n_gram
 bool tn_has_fork(trie_node* obj){
     if(tn_is_leaf(obj)==true){
@@ -172,9 +161,6 @@ void tn_print_subtree(trie_node* obj){
     }
     else if(tn_is_normal(obj)==true){
         fprintf(stderr,"Normal node on %p ,Word= %s ,Final = %s \n",obj,obj->Word,btoa(obj->final));
-    }
-    else if(tn_is_head(obj)==true){
-        fprintf(stderr,"\nHead node on %p \n",obj);
     }
     else if(obj->mode=='s'){
         fprintf(stderr,"Hyper node on %p \n",obj);
@@ -304,7 +290,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     result.found=false;
     result.node_ptr=NULL;
     if(obj->Array==NULL){
-        fprintf(stderr, "Null in loc bin");
+        fprintf(stderr, "Null in loc bin\n");
         exit(-1);
     }
     if(obj->Initialized==false){
@@ -406,7 +392,7 @@ bool tn_compress(trie_node* obj){
     if(tn_is_leaf(obj)==true){
         return true;
     }
-    else if(tn_is_normal(obj) || tn_is_head(obj)){
+    else if(tn_is_normal(obj)){
         if(obj->next.First_Available_Slot==0) return true;
         int i;
         for(i=0;i<obj->next.First_Available_Slot;i++){
@@ -415,7 +401,6 @@ bool tn_compress(trie_node* obj){
                 hyper_node_init(&tmp);
                 hyper_node_insert(&tmp,&obj->next.Array[i]);
                 memcpy(&obj->next.Array[i],&tmp,sizeof(hyper_node));
-                
             }
         }
         return false;
