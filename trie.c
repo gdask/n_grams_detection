@@ -7,6 +7,11 @@ void trie_init(trie* obj,int init_child_arr_size){
         fprintf(stderr,"Trie init called with wrong init child arr size\n");
         exit(-1);
     }
+    trie_node* pt;
+    //fprintf(stderr,"obj on %p, ca on %p\n",pt,&pt->next);
+    obj->offset = (size_t)&pt->next -(size_t)pt;
+    //fprintf(stderr,"obj on %p, ca on %p\n",pt,(void*)pt+obj->offset);
+
     obj->ca_init_size = init_child_arr_size;
     obj->max_height = 0;
     obj->dynamic = true;
@@ -14,11 +19,11 @@ void trie_init(trie* obj,int init_child_arr_size){
     #if USE_BLOOM == 1
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
     obj->reuse_filter = (void*)&f_reuse;
-    obj->ngram_inserted = (void*)&f_append;
+    obj->ngram_unique = (void*)&f_append;
     #else
     pointer_set_init(&obj->detected_nodes,FILTER_INIT_SIZE);
     obj->reuse_filter = (void*)&ps_reuse;
-    obj->ngram_inserted = (void*)&ps_append;
+    obj->ngram_unique = (void*)&ps_append;
     #endif
 }
 
@@ -83,7 +88,7 @@ bool trie_delete(trie* obj,line_manager* lm){
         else{
             current = ca_locate_bin(&current.node_ptr->next,current_word);
         }
-        if(current.found == false){
+        if(current.node_ptr == NULL){
             //N_gram didnt found,nothing changes in trie
             return false;
         }
@@ -110,46 +115,42 @@ bool trie_delete(trie* obj,line_manager* lm){
 
 clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
-    bool valid_ngram = lm_fetch_ngram(lm);
     rm_start(rm,obj->max_height);
     obj->reuse_filter(&obj->detected_nodes);
 
-    while(valid_ngram==true){
+    while(lm_fetch_ngram(lm)){
         rm_new_ngram(rm);
         char* current_word = lm_fetch_word(lm);
-        bool hash_search = true;
         loc_res current_node;
+
+        //Search first word in hash table
+        if(current_word==NULL) continue;
+        int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
+        //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
+        current_node.node_ptr = (void*)&obj->zero_level.ca_bucket[target_bucket] - obj->offset;
+        
         while(current_word!=NULL){
-            if(hash_search==true){
-                current_node = hash_lookup(&obj->zero_level,current_word);
-                hash_search = false;
-            }
-            else{
-                current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
-            }
-            if(current_node.node_ptr==NULL){
-                rm_ngram_undetected(rm);
-                break;
-            }
+            //current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
+            current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
+            if(current_node.node_ptr==NULL) break;
             rm_append_word(rm,current_word);
             if(current_node.node_ptr->mode=='s'){ //hyper node
                 hyper_node* tmp =(hyper_node*)current_node.node_ptr;
                 if(tmp->Word_Info[0]>0){ //Final n_gram case
-                    if(obj->ngram_inserted(&obj->detected_nodes,tmp->Word_Vector)==true){
+                    if(obj->ngram_unique(&obj->detected_nodes,tmp->Word_Vector)==true){
                         rm_ngram_detected(rm, na);
                     }
-                    trie_hyper_search(obj,lm,rm,na,tmp);
                 }
+                trie_hyper_search(obj,lm,rm,na,tmp);
                 break;
             }
             if(current_node.node_ptr->final==true){
-                if(obj->ngram_inserted(&obj->detected_nodes,current_node.node_ptr)==true){
+                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
                     rm_ngram_detected(rm, na);
                 }
             }
             current_word = lm_fetch_word(lm);
         }
-        valid_ngram=lm_fetch_ngram(lm);
     }
     rm_completed(rm);
     return clock() - start;
@@ -157,8 +158,8 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* 
 
 void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
     char* current_word = lm_fetch_word(lm);
-    char* hyper_word = current->Word_Vector + current->Word_Info[0];
-    short* metadata = current->Word_Info +1;
+    char* hyper_word = current->Word_Vector + strlen(current->Word_Vector)+1;
+    short* metadata = current->Word_Info + 1;
     size_t bytes;
     bool final;
     while(current_word!=NULL){
@@ -175,12 +176,12 @@ void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_arra
             return;
         }
         if(strcmp(current_word,hyper_word)!=0){
-            rm_ngram_undetected(rm);
+            //rm_ngram_undetected(rm);
             return;
         }
         rm_append_word(rm,current_word);
         if(final==true){
-            if(obj->ngram_inserted(&obj->detected_nodes,hyper_word)==true){
+            if(obj->ngram_unique(&obj->detected_nodes,hyper_word)==true){
                 rm_ngram_detected(rm, na);
             }
         }
@@ -203,13 +204,9 @@ void trie_compress(trie* obj){
         return;
     }
     obj->dynamic = false;
-    //tn_compress(obj->head);
-    //tn_compress every trie node on hashtable
+    //ca_compress every hashtable bucket
     int i;
     for(i=0;i<obj->zero_level.size;i++){
-        int j;
-        for(j=0;j<obj->zero_level.ca_bucket->First_Available_Slot;j++){
-            tn_compress(&obj->zero_level.ca_bucket->Array[j]);
-        }
+        ca_compress(&obj->zero_level.ca_bucket[i],0);
     }
 }

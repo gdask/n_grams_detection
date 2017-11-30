@@ -26,6 +26,7 @@ int hash_function_overflow(hashtable* obj, char* input_str);
 /*search in the table for <value>, returns pointer to carray*/
 loc_res hash_lookup(hashtable* obj, char* input);
 loc_res hashtable_search(hashtable* obj, char* word, int* bucket);
+int hash_get_bucket(hashtable* obj, char* word);
 bool split(hashtable* obj, char* input);
 
 /*Insert*/

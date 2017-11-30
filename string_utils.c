@@ -433,8 +433,8 @@ void rm_completed(result_manager* obj){
         fprintf(obj->output,"\n");*/
         fprintf(obj->output,"%s\n",obj->output_buffer);
         /*clean output_buffer and word_buffer*/
-        memset(obj->output_buffer,0, obj->output_bufsize);
-        memset(obj->word_buffer,0, obj->bufsize);
+        //memset(obj->output_buffer,0, obj->output_bufsize);
+        //memset(obj->word_buffer,0, obj->bufsize);
     }
     obj->first_available_slot=0;
     obj->current_ngram=NULL;

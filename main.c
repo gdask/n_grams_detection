@@ -60,14 +60,15 @@ int main(int argc,char* argv[]){
         has_line= lm_fetch_line(&lm_init, &na);
     }
 
-    //tn_print_subtree(db.head);
     if(lm_init.file_status=='S'){ //Static files only
-        //fprintf(stderr,"static\n");
+        fprintf(stderr,"Static\n");
         trie_compress(&db);
     }
+    //hash_print(&db.zero_level);
+    //return 0;
     line_manager_fin(&lm_init);
     end = clock();
-    fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
+    //fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
 
 
     line_manager lm;

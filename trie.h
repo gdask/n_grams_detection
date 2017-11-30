@@ -17,6 +17,7 @@ struct trie{
     int max_height;
     int ca_init_size;
     hashtable zero_level;
+    size_t offset;
     #if USE_BLOOM==1
     filter detected_nodes;
     #else
@@ -24,7 +25,7 @@ struct trie{
     #endif
     //pointers to filter(bloom or pointer_set) functions,because function overloading is not an option in c!
     void (*reuse_filter)(void* obj);
-    bool (*ngram_inserted)(void* obj,void* input);
+    bool (*ngram_unique)(void* obj,void* input);
 
 };
 typedef struct trie trie;
