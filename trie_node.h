@@ -18,7 +18,6 @@ typedef struct hyper_node hyper_node;
 
 struct locate_result{
 	int index;
-	bool found;
 	trie_node* node_ptr;
 };
 typedef struct locate_result loc_res;
@@ -35,6 +34,7 @@ struct children_arr{
 void ca_init(children_arr* obj,int init_size);
 void ca_fin(children_arr* obj);
 void ca_double(children_arr* obj);
+bool ca_compress(children_arr* obj,int depth);
 //Places at goal index a new leaf with input word. Shifts right existing entries if needed
 void ca_force_append(children_arr* obj,char* input_word,int goal_index);
 //Removes Array[goal_index] from goal index. Shifts left existing entries if needed.
@@ -71,8 +71,6 @@ bool tn_is_leaf(trie_node* obj);
 bool tn_is_normal(trie_node* obj);
 //Debug purpose printing function
 void tn_print_subtree(trie_node* obj);
-
-bool tn_compress(trie_node* obj);
 
 struct hyper_node{
 	char mode;

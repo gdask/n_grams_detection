@@ -38,10 +38,11 @@ int main(int argc,char* argv[]){
 
 
     clock_t start,end;
+    clock_t queries=0;
     start = clock();
 
     trie db;
-    trie_init(&db,2);
+    trie_init(&db,4);
 
     //Ngrams array
     ngram_array na;
@@ -59,14 +60,15 @@ int main(int argc,char* argv[]){
         has_line= lm_fetch_line(&lm_init, &na);
     }
 
-    //tn_print_subtree(db.head);
     if(lm_init.file_status=='S'){ //Static files only
-        //fprintf(stderr,"static\n");
+        fprintf(stderr,"Static\n");
         trie_compress(&db);
     }
+    //hash_print(&db.zero_level);
+    //return 0;
     line_manager_fin(&lm_init);
     end = clock();
-    fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
+    //fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
 
 
     line_manager lm;
@@ -86,13 +88,14 @@ int main(int argc,char* argv[]){
             trie_delete(&db,&lm);
         }
         else if(lm_is_query(&lm)==true){
-            trie_search(&db,&lm,&rm, &na);
+            queries+=trie_search(&db,&lm,&rm, &na);
         }
         else{
             fprintf(stderr,"Corrupted line\n");
         }
         has_line=lm_fetch_line(&lm, &na);
     }
+    fprintf(stderr,"Queries time:%f\n",((float)queries)/CLOCKS_PER_SEC);
 
     line_manager_fin(&lm);
     result_manager_fin(&rm);

@@ -84,8 +84,8 @@ trie_node* hashtable_insert(hashtable* obj, char* word){
     int pos=0;
     loc_res result = hashtable_search(obj, word, &pos); 
     bool overflow=false;
-    bool changed=false;
-    if(result.found==false){
+    //bool changed=false;
+    if(result.node_ptr==NULL){
         overflow = ca_bucket_append(&obj->ca_bucket[pos], word, result.index);
         //fprintf(stderr,"%s\n", obj->ca_bucket[pos].Array[result.index].Word);
     }
@@ -99,7 +99,8 @@ trie_node* hashtable_insert(hashtable* obj, char* word){
         }
         obj->ca_bucket= temp;
         update_round(obj);
-        changed= split(obj, word);
+        //changed= split(obj, word);
+        split(obj, word);
         //result = hashtable_search(obj, word, &pos);
         obj->size++;
         if(obj->p==0){
@@ -202,7 +203,7 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
     //fprintf(stderr, "In search %s \n", word);
     //fprintf(stderr, "P: %d \n", obj->p);
     //fprintf(stderr, "key: %d \n", key);
-    int k=hash_function_overflow(obj, word);
+    //int k=hash_function_overflow(obj, word);
     //fprintf(stderr, "key_over: %d\n", k);
     //if(p==0){ 
       //  p=obj->old_p;
@@ -225,15 +226,23 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
     return result;
 }
 
+int hash_get_bucket(hashtable* obj, char* word){
+    int ov_key = hash_function_overflow(obj,word);
+    //unsigned long ov_key = str_to_int(word)%(2*obj->init_size);
+    if(ov_key%obj->init_size >= obj->p) return ov_key%obj->init_size;
+    return ov_key;
+}
+
 void hash_print(hashtable* obj){
     fprintf(stderr,"Hashtable on %p has %d buckets:\n",obj,obj->size);
     int i;
     for(i=0;i<obj->size;i++){
-        fprintf(stderr,"Bucket on %d:\n",i);
+        fprintf(stderr,"Bucket on %d: has %d entries\n",i,obj->ca_bucket[i].First_Available_Slot);
         int j;
         for(j=0;j<obj->ca_bucket[i].First_Available_Slot;j++){
-            fprintf(stderr, "%s|", obj->ca_bucket[i].Array[j].Word);
+            //fprintf(stderr, "%s|", obj->ca_bucket[i].Array[j].Word);
+            //tn_print_subtree(&obj->ca_bucket[i].Array[j]);
         }
-        fprintf(stderr, "\n");
+        //fprintf(stderr, "\n");
     }
 }
