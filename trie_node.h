@@ -6,7 +6,6 @@
 
 #define INIT_SIZE 2
 #define HYPER_VECTOR_INIT 32
-#define HYPER_DATA_INIT 8
 #define DEBUG 0
 
 struct trie_node;
@@ -19,6 +18,7 @@ typedef struct hyper_node hyper_node;
 struct locate_result{
 	int index;
 	trie_node* node_ptr;
+	int string_length;
 };
 typedef struct locate_result loc_res;
 
@@ -75,10 +75,9 @@ void tn_print_subtree(trie_node* obj);
 struct hyper_node{
 	char mode;
 	char* Word_Vector;
-	short* Word_Info;
-	//word_info[last_word+1]=0
+	bool first_final;
 	uint vector_size;
-	uint info_size;
+	uint entries;
 };
 
 void hyper_node_init(hyper_node* obj);

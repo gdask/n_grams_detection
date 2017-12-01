@@ -34,7 +34,8 @@ void trie_init(trie* obj,int init_child_arr_size);
 void trie_fin(trie* obj);
 void trie_insert(trie* obj,line_manager* lm);
 clock_t trie_search(trie* obj,line_manager* lm,result_manager *rm, ngram_array* na);
-void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current);
+clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na);
+//void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current);
 bool trie_delete(trie* obj,line_manager* lm);
 void trie_compress(trie* obj);
 

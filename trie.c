@@ -117,6 +117,7 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* 
     clock_t start = clock();
     rm_start(rm,obj->max_height);
     obj->reuse_filter(&obj->detected_nodes);
+    char* eof = &lm->buffer[lm->line_end];
 
     while(lm_fetch_ngram(lm)){
         rm_new_ngram(rm);
@@ -128,35 +129,93 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* 
         int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
         //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
         current_node.node_ptr = (void*)&obj->zero_level.ca_bucket[target_bucket] - obj->offset;
-        
-        while(current_word!=NULL){
+
+        while(current_word<eof){
             //current_node.node_ptr = tn_lookup(current_node.node_ptr,current_word);
             current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
             if(current_node.node_ptr==NULL) break;
             rm_append_word(rm,current_word);
-            if(current_node.node_ptr->mode=='s'){ //hyper node
-                hyper_node* tmp =(hyper_node*)current_node.node_ptr;
-                if(tmp->Word_Info[0]>0){ //Final n_gram case
-                    if(obj->ngram_unique(&obj->detected_nodes,tmp->Word_Vector)==true){
-                        rm_ngram_detected(rm, na);
-                    }
-                }
-                trie_hyper_search(obj,lm,rm,na,tmp);
-                break;
-            }
             if(current_node.node_ptr->final==true){
                 if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
                     rm_ngram_detected(rm, na);
                 }
             }
-            current_word = lm_fetch_word(lm);
+            //get next word
+            current_word += current_node.string_length+1;
+            while(*current_word=='\0') current_word++;
         }
     }
     rm_completed(rm);
     return clock() - start;
 }
 
-void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
+clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+    clock_t start = clock();
+    rm_start(rm,obj->max_height);
+    obj->reuse_filter(&obj->detected_nodes);
+    char* eof = &lm->buffer[lm->line_end];
+
+    while(lm_fetch_ngram(lm)){
+        rm_new_ngram(rm);
+        char* current_word = lm_fetch_word(lm);
+        loc_res current_node;
+
+        //Search first word in hash table
+        if(current_word==NULL) continue;
+        int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
+        //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
+        current_node.node_ptr = (void*)&obj->zero_level.ca_bucket[target_bucket] - obj->offset;
+
+        while(current_word < eof){
+            current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
+            if(current_node.node_ptr==NULL) break;
+            rm_append_word(rm,current_word);
+            if(current_node.node_ptr->final==true){
+                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
+                    rm_ngram_detected(rm, na);
+                }
+            }
+            current_word += current_node.string_length+1;
+            while(*current_word=='\0') current_word++;
+
+            if(current_node.node_ptr->mode=='s'){ //hyper node
+                //set buf at the second hyper node word
+                char* buf1 = ((hyper_node*)current_node.node_ptr)->Word_Vector +current_node.string_length+2;
+                //set input buffer at next word
+                char* buf2 = current_word;
+                //compare buffers
+                while(current_word < eof){
+                    //compare char by char
+                    while(*buf1 !='\0' && *buf1==*buf2){
+                        buf1++;
+                        buf2++;
+                    }
+                    if(*buf1 !=*buf2) break;
+                    //Words are the same
+                    rm_append_word(rm,current_word);
+                    //get final info bit
+                    buf1++;
+                    if(*buf1==true){
+                        if(obj->ngram_unique(&obj->detected_nodes,buf1)){
+                            rm_ngram_detected(rm,na);
+                        }
+                    }
+                    //set buffers at next word
+                    buf1++;
+                    buf2++;
+                    while(*buf2=='\0') buf2++;
+                    current_word = buf2;
+                }
+                break;
+            }
+        }
+    }
+    rm_completed(rm);
+    return clock() - start;
+}
+
+//It doesnt work with the last hyper node version
+/*void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
     char* current_word = lm_fetch_word(lm);
     char* hyper_word = current->Word_Vector + strlen(current->Word_Vector)+1;
     short* metadata = current->Word_Info + 1;
@@ -190,14 +249,14 @@ void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_arra
         current_word = lm_fetch_word(lm);
     }
     return;
-}
+}*/
 
 void trie_compress(trie* obj){
     if(obj->dynamic==false){
         fprintf(stderr,"Trie object is already compressed\n");
         return ;
     }
-    if(sizeof(hyper_node) > sizeof(trie_node)){
+    if(sizeof(hyper_node) >= sizeof(trie_node)){
         fprintf(stderr,"Size of trie node must be greater or equal to Size of hyper node due to compability issues\n");
         fprintf(stderr,"trie_node: %d bytes, hyper_node: %d bytes\n",(int)sizeof(trie_node),(int)sizeof(hyper_node));
         fprintf(stderr,"Trie cannod be compressed\n");

@@ -22,7 +22,7 @@ Dynamic tries supports:
 * Search: Gets an entire line from line manager,searches for every possible n_gram in that line avoiding duplicates and gives directives at result manager to print the result.
 * Delete: Gets an entire line as n_gram from line manager and deletes it,if that n_gram is part of trie.
 
-Static tries: A dynamic trie could be transormed into static with compress() function. That function use a dfs recursive search to transform any path without fork in trie,into a hyper_node that is a trie node which stores a sentence instead of just one word. Static trie support search but it doesnt support insert or delete.
+Static tries: A dynamic trie could be transormed into static with compress() function. That function use a dfs recursive search to transform any path without fork in trie,into a hyper_node that is a trie node which stores a sentence instead of just one word. Static trie support search but it doesnt support insert or delete. Hyper node uses a Char vector that contain several words as [string bytes]['\0'][final info byte].
 
 #### String_Utils: 
 Line Manager:
