@@ -5,6 +5,7 @@
 #define BUCKET_SIZE 9
 #define HASH_SIZE 99
 #define ARRAY_NODE_SIZE 5
+#include "../filters/murmur3.h"
 
 /*djb2, to turn a string to int*/
 unsigned long transposeSTR(char* str){
@@ -24,7 +25,10 @@ unsigned long transposeSTR(char* str){
 
 int hashfuction(char* input){
     unsigned long code;
+    //djb2
     code=transposeSTR(input);
+    //int len=strlen(input);
+    //MurmurHash3_x86_32(input, len, 0, &code);
     return code % HASH_SIZE; //f(k)% size
 }
 
@@ -63,6 +67,7 @@ void Hash_fin(Hash* obj){
         }
         free(obj->Bucket);
     }
+    //printf("Freed words:%d nodes: %d buckets%d\n", w,n,b);
 }
 
 void Hash_reuse(Hash* obj){
@@ -73,12 +78,14 @@ void Hash_reuse(Hash* obj){
                 int j;
                 for(j=0; j<obj->Bucket[i].first_available_slot;j++){
                     if(obj->Bucket[i].Node[j].word!=NULL){
+                        //fprintf(stderr, "%s\n",obj->Bucket[i].Node[j].word);
                         free(obj->Bucket[i].Node[j].word);
                         obj->Bucket[i].Node[j].freq=0;
                     }
-                    obj->Bucket[i].first_available_slot=0;
-                    obj->Bucket[i].max_freq=0;
+
                 }
+                obj->Bucket[i].first_available_slot=0;
+                obj->Bucket[i].max_freq=0;
             }
         }
     }
@@ -216,12 +223,12 @@ void Array_fin(top_array* obj){
 }
 
 void Array_insert(top_array* obj, char* word, int freq){
+    //fprintf(stderr,"Freq %d\n", freq-1);
     //find the right position to enter new element. Binary search is used
     int pos = arr_node_lookup_bin(&obj->nodes[freq-1], word);
     if(pos==-1){
         return; //word already in structure
     }
-
     //insert element to right pos
     arr_node_insert(&obj->nodes[freq-1], word, pos);
 
@@ -233,7 +240,12 @@ int arr_node_lookup_bin(arr_node* obj, char* word){
     int middle = (lower_bound+upper_bound)/2;
 
     while(lower_bound <= upper_bound){
+            //fprintf(stderr, "FAS: %d, Middle:%d\n", upper_bound, middle);
             int cmp_res = 0;
+            if(obj->arr_node[middle]==NULL){
+                fprintf(stderr, "Null in arr_node_lookup_bin\n");
+                exit(-1);
+            }
             cmp_res=strcmp(obj->arr_node[middle], word);
             if(cmp_res < 0){
                 lower_bound = middle + 1;
@@ -256,7 +268,8 @@ int arr_node_lookup_bin(arr_node* obj, char* word){
 void arr_node_insert(arr_node* obj, char*word, int goal_index){
     //check if should realloc
     if(obj->size==goal_index ||obj->first_available_slot==obj->size){
-        char** temp= realloc(*obj->arr_node, 2*obj->size*sizeof(char*));
+        //fprintf(stderr, "Realloc\n");
+        char** temp= realloc(obj->arr_node, 2*obj->size*sizeof(char*));
         if(temp==NULL){
             fprintf(stderr, "Error in realloc::bucket_insert\n");
             exit(-1);
@@ -274,11 +287,13 @@ void arr_node_insert(arr_node* obj, char*word, int goal_index){
         size_t movable= (obj->first_available_slot - goal_index)* sizeof(char*);
         memmove(&obj->arr_node[goal_index+1], &obj->arr_node[goal_index], movable);
     }
+
     //create node
-    obj->arr_node[goal_index]=malloc(strlen(word)+1);
+    //fprintf(stderr,"Initialized %d\n", goal_index);
+    obj->arr_node[goal_index]=malloc(sizeof(char)*(strlen(word)+1));
     if(obj->arr_node[goal_index]==NULL){
         fprintf(stderr, "Error in malloc::arr_node_insert\n");
-         exit(-1);
+        exit(-1);
     }
     strcpy(obj->arr_node[goal_index], word);
     obj->first_available_slot++;   
@@ -294,6 +309,7 @@ void display_topk(top_array* obj, int k){
             for(j=0; j<obj->nodes[i].first_available_slot; j++){
                 if(k==1){
                     printf("%s\n", obj->nodes[i].arr_node[j]);
+                    
                 }
                 else{
                     printf("%s|", obj->nodes[i].arr_node[j]);
@@ -319,7 +335,7 @@ void topk(Hash* obj, int k){
             int j;
             for(j=0; j<obj->Bucket[i].first_available_slot;j++){
                 Array_insert(&array, obj->Bucket[i].Node[j].word, obj->Bucket[i].Node[j].freq);
-                printf("insert done\n");
+                //printf("insert done\n");
             }
         }
     }
