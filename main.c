@@ -72,6 +72,7 @@ int main(int argc,char* argv[]){
     }
     //hash_print(&db.zero_level);
     //return 0;
+    char status = lm_init.file_status;
     line_manager_fin(&lm_init);
     end = clock();
     //fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
@@ -83,27 +84,40 @@ int main(int argc,char* argv[]){
     result_manager_init(&rm,result_file);
 
     //QUERY FILE
-    //has_line=lm_fetch_line(&lm, &na);
-    has_line=lm_fetch_line(&lm, &t);
-    while(has_line==true){
-        if(lm_is_insert(&lm)==true){
-            lm_fetch_ngram(&lm);
-            trie_insert(&db,&lm);
-        }
-        else if(lm_is_delete(&lm)==true){
-            lm_fetch_ngram(&lm);
-            trie_delete(&db,&lm);
-        }
-        else if(lm_is_query(&lm)==true){
-            //queries+=trie_search(&db,&lm,&rm, &na);
-            queries+=trie_search(&db,&lm,&rm, &t);
-        }
-        else{
-            fprintf(stderr,"Corrupted line\n");
-        }
+    if(status=='S'){
         has_line=lm_fetch_line(&lm, &t);
         //has_line=lm_fetch_line(&lm, &na);
+        while(has_line==true){
+            // /queries+=trie_static_search(&db,&lm,&rm, &na);
+            queries+=trie_static_search(&db,&lm,&rm, &t);
+            has_line=lm_fetch_line(&lm, &t);
+            //has_line=lm_fetch_line(&lm, &na);
+        }
     }
+    else{
+        has_line=lm_fetch_line(&lm, &t);
+        //has_line=lm_fetch_line(&lm, &na);
+        while(has_line==true){
+            if(lm_is_insert(&lm)==true){
+                lm_fetch_ngram(&lm);
+                trie_insert(&db,&lm);
+            }
+            else if(lm_is_delete(&lm)==true){
+                lm_fetch_ngram(&lm);
+                trie_delete(&db,&lm);
+            }
+            else if(lm_is_query(&lm)==true){
+                //queries+=trie_search(&db,&lm,&rm, &na);
+                queries+=trie_search(&db,&lm,&rm, &t);
+            }
+            else{
+                fprintf(stderr,"Corrupted line\n");
+            }
+            has_line=lm_fetch_line(&lm, &t);
+            //has_line=lm_fetch_line(&lm, &na);
+        }
+    }
+
     fprintf(stderr,"Queries time:%f\n",((float)queries)/CLOCKS_PER_SEC);
 
     line_manager_fin(&lm);
