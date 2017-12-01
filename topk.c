@@ -279,11 +279,11 @@ void na_topk_sort(ngram_array* obj, int k){
                     flag=0;
                 }
                  if(i==obj->first_available_slot-2 || k-1==0){
-                    printf("%s", obj->Array[i].ngram);
+                    printf("%s %d", obj->Array[i].ngram, obj->Array[i].rank);
                     k--;
                 }
                 else{
-                    printf("%s|", obj->Array[i].ngram);
+                    printf("%s %d|", obj->Array[i].ngram, obj->Array[i].rank);
                     k--;
                 }
             }

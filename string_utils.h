@@ -4,7 +4,8 @@
 #define INIT_SIZE_BUF 512
 #include <stdbool.h>
 #include <stdio.h>
-#include "topk.h"
+//#include "topk.h"
+#include "./topk_hash/topk_hash.h"
 
 struct line_manager{
     FILE *input;
@@ -27,7 +28,8 @@ void line_manager_init(line_manager* obj,FILE *fp, char file_status); //Initiliz
 void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
 
 //Fetch line gets the next line from file,returns FALSE if there is no next line
-bool lm_fetch_line(line_manager* obj, ngram_array *na);
+//bool lm_fetch_line(line_manager* obj, ngram_array *na);
+bool lm_fetch_line(line_manager* obj, TopK* top);
 //ex: "hello world re" >> "world re" >> "re" >> RETURN FALSE
 bool lm_fetch_ngram(line_manager* obj);
 //Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS NUll
@@ -65,7 +67,8 @@ void rm_new_ngram(result_manager *obj);
 // appended at [new words]
 void rm_append_word(result_manager* obj,char* word);
 // "|hello world [new words]" is appended at the result
-void rm_ngram_detected(result_manager* obj, ngram_array* na);
+void rm_ngram_detected(result_manager* obj, TopK* top);
+//void rm_ngram_detected(result_manager* obj, ngram_array* na);
 // "|hello world [new words]" will not be a part of the result
 void rm_ngram_undetected(result_manager* obj);
 // writes the result 

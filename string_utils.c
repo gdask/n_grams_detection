@@ -68,7 +68,8 @@ bool lm_is_delete(line_manager* obj){
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj, ngram_array* na){
+bool lm_fetch_line(line_manager* obj, TopK* top){
+//bool lm_fetch_line(line_manager* obj, ngram_array* na){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
 
@@ -115,12 +116,18 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
                     }
                     obj->buffer[i]='\0';
                     ret = strtol(&obj->buffer[2], &ptr, 10);
+                    //print result of topk
+                    //using hash and array
+                    topk(top->Hash, ret);
+                    //using array
                     //na_topk(na, ret);
-                    
-                    na_topk_sort(na, ret);
+                    //na_topk_sort(na, ret);
                 }
-                na_reuse(na);
-                return lm_fetch_line(obj, na);  
+                //reuse topk structure
+                Hash_reuse(top->Hash);
+                //na_reuse(na);
+                return lm_fetch_line(obj, top);
+                //return lm_fetch_line(obj, na);  
             }
             /*keep line status, check if ID is valid*/
             obj->line_status=obj->buffer[0];
@@ -175,11 +182,13 @@ bool lm_fetch_line(line_manager* obj, ngram_array* na){
             }
             if(strcmp(&obj->buffer[2], "DYNAMIC\n")==0){
                 obj->file_status='D';
-                return lm_fetch_line(obj, na);  
+                return lm_fetch_line(obj, top);
+                //return lm_fetch_line(obj, na);  
             }
             else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
                 obj->file_status='S';
-                return lm_fetch_line(obj, na);  
+                return lm_fetch_line(obj, top);
+                //return lm_fetch_line(obj, na);  
             }
             //printf("line %s", obj->buffer);
         }
@@ -352,7 +361,10 @@ void rm_ngram_undetected(result_manager* obj){
 
 /*Αdd all the words of word_buffer to output buffer plus one |
 if current_ngram==NULL that means that i dont need to strcpy last ngram of output buffer, else make a copy of that*/
-void rm_ngram_detected(result_manager* obj, ngram_array* na){
+//Use of hash and array
+void rm_ngram_detected(result_manager* obj, TopK* top){
+//only array
+//void rm_ngram_detected(result_manager* obj, ngram_array* na){
     int word_len=0;
     int occupied_slots=obj->first_available_slot-1;
     int n_gram_len=0;
@@ -412,8 +424,10 @@ void rm_ngram_detected(result_manager* obj, ngram_array* na){
     obj->output_buffer[obj->first_available_slot-1]='\0';
     int len=0;
     len=obj->first_available_slot-current_index;
-    na_lookup(na, &obj->output_buffer[current_index], len);
-    //na_insert_at_the_end(na, &obj->output_buffer[current_index], len);
+    //insert to hash
+    Hash_insert(top->Hash, &obj->output_buffer[current_index], len);
+    //lookup and insert to array
+    //na_lookup(na, &obj->output_buffer[current_index], len);
     /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
     memset(obj->word_buffer, 0, obj->bufsize);

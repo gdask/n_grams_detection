@@ -45,19 +45,25 @@ int main(int argc,char* argv[]){
     trie_init(&db,4);
 
     //Ngrams array
-    ngram_array na;
-    na_init(&na);
+    //ngram_array na;
+    //na_init(&na);
+
+    //Hash and ngram array
+    TopK t;
+    Hash_init(t.Hash);
 
     bool has_line;
     //INIT FILE
     line_manager lm_init;
     line_manager_init(&lm_init,init_file, 'I');
-    has_line = lm_fetch_line(&lm_init, &na);    
+    has_line = lm_fetch_line(&lm_init, &t); 
+    //has_line = lm_fetch_line(&lm_init, &na);    
 
     while(has_line==true){
         lm_fetch_ngram(&lm_init);
         trie_insert(&db,&lm_init);
-        has_line= lm_fetch_line(&lm_init, &na);
+        has_line= lm_fetch_line(&lm_init, &t);
+        //has_line= lm_fetch_line(&lm_init, &na);
     }
 
     if(lm_init.file_status=='S'){ //Static files only
@@ -77,7 +83,8 @@ int main(int argc,char* argv[]){
     result_manager_init(&rm,result_file);
 
     //QUERY FILE
-    has_line=lm_fetch_line(&lm, &na);
+    //has_line=lm_fetch_line(&lm, &na);
+    has_line=lm_fetch_line(&lm, &t);
     while(has_line==true){
         if(lm_is_insert(&lm)==true){
             lm_fetch_ngram(&lm);
@@ -88,18 +95,21 @@ int main(int argc,char* argv[]){
             trie_delete(&db,&lm);
         }
         else if(lm_is_query(&lm)==true){
-            queries+=trie_search(&db,&lm,&rm, &na);
+            //queries+=trie_search(&db,&lm,&rm, &na);
+            queries+=trie_search(&db,&lm,&rm, &t);
         }
         else{
             fprintf(stderr,"Corrupted line\n");
         }
-        has_line=lm_fetch_line(&lm, &na);
+        has_line=lm_fetch_line(&lm, &t);
+        //has_line=lm_fetch_line(&lm, &na);
     }
     fprintf(stderr,"Queries time:%f\n",((float)queries)/CLOCKS_PER_SEC);
 
     line_manager_fin(&lm);
     result_manager_fin(&rm);
-    na_fin(&na);
+    Hash_fin(t.Hash);
+    //na_fin(&na);
     fclose(query_file);
     //fclose(result_file);
     fclose(init_file);

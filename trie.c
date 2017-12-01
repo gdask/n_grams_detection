@@ -113,7 +113,8 @@ bool trie_delete(trie* obj,line_manager* lm){
     return true;
 }
 
-clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
+//clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
     rm_start(rm,obj->max_height);
     obj->reuse_filter(&obj->detected_nodes);
@@ -138,15 +139,18 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* 
                 hyper_node* tmp =(hyper_node*)current_node.node_ptr;
                 if(tmp->Word_Info[0]>0){ //Final n_gram case
                     if(obj->ngram_unique(&obj->detected_nodes,tmp->Word_Vector)==true){
-                        rm_ngram_detected(rm, na);
+                        //rm_ngram_detected(rm, na);
+                        rm_ngram_detected(rm, top);
                     }
                 }
-                trie_hyper_search(obj,lm,rm,na,tmp);
+                trie_hyper_search(obj,lm,rm,top,tmp);
+                //trie_hyper_search(obj,lm,rm,na,tmp);
                 break;
             }
             if(current_node.node_ptr->final==true){
                 if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    rm_ngram_detected(rm, na);
+                    //rm_ngram_detected(rm, na);
+                    rm_ngram_detected(rm, top);
                 }
             }
             current_word = lm_fetch_word(lm);
@@ -156,7 +160,8 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* 
     return clock() - start;
 }
 
-void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
+void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top,hyper_node* current){
+//void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
     char* current_word = lm_fetch_word(lm);
     char* hyper_word = current->Word_Vector + strlen(current->Word_Vector)+1;
     short* metadata = current->Word_Info + 1;
@@ -182,7 +187,9 @@ void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_arra
         rm_append_word(rm,current_word);
         if(final==true){
             if(obj->ngram_unique(&obj->detected_nodes,hyper_word)==true){
-                rm_ngram_detected(rm, na);
+                //rm_ngram_detected(rm, na);
+                rm_ngram_detected(rm, top);
+                
             }
         }
         metadata++;
