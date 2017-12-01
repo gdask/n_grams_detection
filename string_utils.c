@@ -68,7 +68,7 @@ bool lm_is_delete(line_manager* obj){
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj, TopK* top){
+bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
 //bool lm_fetch_line(line_manager* obj, ngram_array* na){
     /*clear obj->buffer just in case*/
     //memset(obj->buffer, 0, obj->buffer);
@@ -107,6 +107,7 @@ bool lm_fetch_line(line_manager* obj, TopK* top){
         if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
             //In case of F you just ignore this line and get the next one.
             if(obj->buffer[0]=='F'){
+                rm_display_result(rm);
                 if(obj->buffer[1]==' '){
                     char *ptr;
                     long ret;
@@ -118,15 +119,17 @@ bool lm_fetch_line(line_manager* obj, TopK* top){
                     ret = strtol(&obj->buffer[2], &ptr, 10);
                     //print result of topk
                     //using hash and array
+                    //rm_display_result(rm);
                     topk(top->Hash, ret);
                     //using array
                     //na_topk(na, ret);
                     //na_topk_sort(na, ret);
                 }
+                
                 //reuse topk structure
                 Hash_reuse(top->Hash);
                 //na_reuse(na);
-                return lm_fetch_line(obj, top);
+                return lm_fetch_line(obj, top, rm);
                 //return lm_fetch_line(obj, na);  
             }
             /*keep line status, check if ID is valid*/
@@ -182,12 +185,12 @@ bool lm_fetch_line(line_manager* obj, TopK* top){
             }
             if(strcmp(&obj->buffer[2], "DYNAMIC\n")==0){
                 obj->file_status='D';
-                return lm_fetch_line(obj, top);
+                return lm_fetch_line(obj, top, rm);
                 //return lm_fetch_line(obj, na);  
             }
             else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
                 obj->file_status='S';
-                return lm_fetch_line(obj, top);
+                return lm_fetch_line(obj, top, rm);
                 //return lm_fetch_line(obj, na);  
             }
             //printf("line %s", obj->buffer);
@@ -294,6 +297,7 @@ void result_manager_init(result_manager* obj,FILE *fp){
     }
     obj->bufsize=INIT_SIZE_BUF;
     obj->first_available_slot=-1;
+    obj->buffer_start=0;
 }
 
 void result_manager_fin(result_manager* obj){
@@ -317,7 +321,7 @@ void rm_start(result_manager *obj,int max_words){
         obj->word_buffer=temp;
     }
     /*a new new ngram starts*/
-    obj->first_available_slot=0;
+    obj->first_available_slot=obj->buffer_start;
     return;
 }
 
@@ -409,14 +413,10 @@ void rm_ngram_detected(result_manager* obj, TopK* top){
             obj->output_buffer=temp;
             obj->output_bufsize= 2*obj->output_bufsize;
         }
-        if(obj->first_available_slot==0){
-            strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
-            strcat(&obj->output_buffer[obj->first_available_slot], " ");
-        }
-        else{
-            strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
-            strcat(&obj->output_buffer[obj->first_available_slot], " ");
-        }
+        
+        strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
+        strcat(&obj->output_buffer[obj->first_available_slot], " ");
+        
         obj->first_available_slot=obj->first_available_slot+word_len;
         occupied_slots=occupied_slots+word_len;
         i++;
@@ -436,21 +436,25 @@ void rm_ngram_detected(result_manager* obj, TopK* top){
 
 /*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
 void rm_completed(result_manager* obj){
-    if(obj->first_available_slot==0){ //no ngram detected
-        fprintf(obj->output,"-1\n");
+    if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
+        strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
+        //fprintf(obj->output,"-1\n");
+        obj->first_available_slot=obj->first_available_slot+2;
     }    
     else{
-        obj->output_buffer[obj->first_available_slot-1]='\0';
-        /*for(i=0;i<obj->first_available_slot;i++){
-            fprintf(obj->output,"%c",obj->output_buffer[i]);
-        }
-        fprintf(obj->output,"\n");*/
-        fprintf(obj->output,"%s\n",obj->output_buffer);
+        obj->output_buffer[obj->first_available_slot-1]='\n';
+        //fprintf(obj->output,"%s\n",obj->output_buffer);
         /*clean output_buffer and word_buffer*/
         //memset(obj->output_buffer,0, obj->output_bufsize);
         //memset(obj->word_buffer,0, obj->bufsize);
     }
-    obj->first_available_slot=0;
+    obj->buffer_start=obj->first_available_slot;
     obj->current_ngram=NULL;
     obj->current_word_index=-1;
+}
+
+void rm_display_result(result_manager* obj){
+    obj->output_buffer[obj->first_available_slot]='\0';
+    fprintf(obj->output,"%s",obj->output_buffer);
+    obj->buffer_start=0;
 }

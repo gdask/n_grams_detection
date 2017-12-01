@@ -22,6 +22,19 @@ struct line_manager{
     int line_end; //where \n found
 };
 
+typedef struct result_manager{
+    FILE *output;
+    char** word_buffer;
+    char* output_buffer;
+    int bufsize;
+    int output_bufsize;
+    int first_available_slot; //first available slot to put words of word_buffer
+    char* current_ngram; //last ngram of output_buffer
+    int current_ngram_index; //keep where current ngram is starting
+    int current_word_index; //keep where current word is starting
+    int buffer_start;
+}result_manager;
+
 typedef struct line_manager line_manager;
 //Input manager functions
 void line_manager_init(line_manager* obj,FILE *fp, char file_status); //Initilize struct
@@ -29,7 +42,8 @@ void line_manager_fin(line_manager* obj); //Deallocates any malloced memory
 
 //Fetch line gets the next line from file,returns FALSE if there is no next line
 //bool lm_fetch_line(line_manager* obj, ngram_array *na);
-bool lm_fetch_line(line_manager* obj, TopK* top);
+bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm);
+//bool lm_fetch_line(line_manager* obj, TopK* top);
 //ex: "hello world re" >> "world re" >> "re" >> RETURN FALSE
 bool lm_fetch_ngram(line_manager* obj);
 //Returns the next word from ngram, ex: "hello" >> "world" >> "re" >> RETURNS NUll
@@ -43,18 +57,7 @@ int lm_n_gram_counter(line_manager* obj);
 /*return file_status*/
 char lm_get_file_status(line_manager *obj);
 
-typedef struct result_manager{
-    FILE *output;
-    char** word_buffer;
-    char* output_buffer;
-    int bufsize;
-    int output_bufsize;
-    int first_available_slot; //first available slot to put words of word_buffer
-    char* current_ngram; //last ngram of output_buffer
-    int current_ngram_index; //keep where current ngram is starting
-    int current_word_index; //keep where current word is starting
-    int buffer_end;
-}result_manager;
+///////////////////////////////////////////////////////////////////////////
 
 //Output manager functions
 void result_manager_init(result_manager* obj,FILE *fp); //Initilize struct
@@ -73,5 +76,7 @@ void rm_ngram_detected(result_manager* obj, TopK* top);
 void rm_ngram_undetected(result_manager* obj);
 // writes the result 
 void rm_completed(result_manager* obj);
+//display result
+void rm_display_result(result_manager* obj);
 
 #endif

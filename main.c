@@ -55,14 +55,16 @@ int main(int argc,char* argv[]){
     bool has_line;
     //INIT FILE
     line_manager lm_init;
+    result_manager rm;
+    result_manager_init(&rm,result_file);
     line_manager_init(&lm_init,init_file, 'I');
-    has_line = lm_fetch_line(&lm_init, &t); 
+    has_line = lm_fetch_line(&lm_init, &t, &rm); 
     //has_line = lm_fetch_line(&lm_init, &na);    
 
     while(has_line==true){
         lm_fetch_ngram(&lm_init);
         trie_insert(&db,&lm_init);
-        has_line= lm_fetch_line(&lm_init, &t);
+        has_line= lm_fetch_line(&lm_init, &t, &rm);
         //has_line= lm_fetch_line(&lm_init, &na);
     }
 
@@ -80,22 +82,20 @@ int main(int argc,char* argv[]){
 
     line_manager lm;
     line_manager_init(&lm,query_file,'Q');
-    result_manager rm;
-    result_manager_init(&rm,result_file);
 
     //QUERY FILE
     if(status=='S'){
-        has_line=lm_fetch_line(&lm, &t);
+        has_line=lm_fetch_line(&lm, &t, &rm);
         //has_line=lm_fetch_line(&lm, &na);
         while(has_line==true){
             // /queries+=trie_static_search(&db,&lm,&rm, &na);
             queries+=trie_static_search(&db,&lm,&rm, &t);
-            has_line=lm_fetch_line(&lm, &t);
+            has_line=lm_fetch_line(&lm, &t, &rm);
             //has_line=lm_fetch_line(&lm, &na);
         }
     }
     else{
-        has_line=lm_fetch_line(&lm, &t);
+        has_line=lm_fetch_line(&lm, &t, &rm);
         //has_line=lm_fetch_line(&lm, &na);
         while(has_line==true){
             if(lm_is_insert(&lm)==true){
@@ -113,7 +113,7 @@ int main(int argc,char* argv[]){
             else{
                 fprintf(stderr,"Corrupted line\n");
             }
-            has_line=lm_fetch_line(&lm, &t);
+            has_line=lm_fetch_line(&lm, &t, &rm);
             //has_line=lm_fetch_line(&lm, &na);
         }
     }
