@@ -360,7 +360,7 @@ bool hyper_node_insert(hyper_node* obj,trie_node* input){
         size_t available_space = obj->vector_size - First_Available_Slot;
         size_t word_length = strlen(current->Word)+1;
         //Realloc if any resource is full
-        while(available_space <= word_length){
+        while(available_space <= word_length+2){
             obj->Word_Vector = realloc(obj->Word_Vector,2*obj->vector_size);
             if(obj->Word_Vector==NULL){
                 fprintf(stderr,"hyper insert realloc failed\n");
@@ -380,6 +380,8 @@ bool hyper_node_insert(hyper_node* obj,trie_node* input){
         if(tn_has_child(current)==true) current = &current->next.Array[0];
         else current = NULL;
     }
+    //Set end of Vector with '\n'
+    obj->Word_Vector[First_Available_Slot]= '\n';
     //Destructs path
     tn_fin(input);
     return true;
