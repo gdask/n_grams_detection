@@ -100,6 +100,7 @@ bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
             //printf("Line read:%s", obj->buffer);
         }
         else{ // EOF is found, my work here is done
+            //printf("EOF\n");
             return false;
         }  
     
@@ -439,7 +440,7 @@ void rm_completed(result_manager* obj){
     if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
         //fprintf(obj->output,"-1\n");
-        obj->first_available_slot=obj->first_available_slot+2;
+        obj->first_available_slot=obj->first_available_slot+3;
     }    
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
@@ -457,4 +458,5 @@ void rm_display_result(result_manager* obj){
     obj->output_buffer[obj->first_available_slot]='\0';
     fprintf(obj->output,"%s",obj->output_buffer);
     obj->buffer_start=0;
+    obj->first_available_slot=0;
 }

@@ -302,11 +302,15 @@ void arr_node_insert(arr_node* obj, char*word, int goal_index){
 void display_topk(top_array* obj, int k){
     int start=obj->size-1; //start from end
     int i=start;
-    printf("Top: ");
+    int flag=0; //no result
     while(k!=0 && i>=0){
         int j;
         if(obj->nodes!=NULL){
             for(j=0; j<obj->nodes[i].first_available_slot; j++){
+                if(flag==0){
+                    printf("Top: ");
+                    flag=1;
+                }
                 if(k==1){
                     printf("%s\n", obj->nodes[i].arr_node[j]);
                     
