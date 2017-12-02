@@ -439,7 +439,7 @@ void rm_completed(result_manager* obj){
     if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
         //fprintf(obj->output,"-1\n");
-        obj->first_available_slot=obj->first_available_slot+2;
+        obj->first_available_slot=obj->first_available_slot+3;
     }    
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
