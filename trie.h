@@ -8,7 +8,7 @@
 #include "filters/pointer_set.h"
 #include <time.h>
 
-#define HASH_BUCKETS_INIT 8
+
 #define USE_BLOOM 0 //1 for bloom , 0 for pointer set
 #define FILTER_INIT_SIZE 500
 

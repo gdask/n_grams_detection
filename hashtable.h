@@ -4,6 +4,10 @@
 
 #include "trie_node.h"
 
+#define HASH_BUCKETS_INIT 8
+#define HASH_MASK 0x07
+#define OV_HASH_MASK 0x0F
+
 typedef struct hashtable{
     children_arr* ca_bucket;
     int round;
@@ -12,6 +16,9 @@ typedef struct hashtable{
     int p; //pointer p 
     int old_p;
     int primary_size;
+    //worth a shot?
+    int mask;
+    int ov_mask;
 }hashtable;
 
 
