@@ -24,24 +24,40 @@ Dynamic tries supports:
 
 Static tries: A dynamic trie could be transormed into static with compress() function. That function use a dfs recursive search to transform any path without fork in trie,into a hyper_node that is a trie node which stores a sentence instead of just one word. Static trie support search but it doesnt support insert or delete. Hyper node uses a Char vector that contain several words as [string bytes]['\0'][final info byte].
 
+#### Hashtable(linear hashing):
+This structure implements linear hashing as shown in(http://cgi.di.uoa.gr/~ad/MDE515/e_ds_linearhashing.pdf). At the start of each round we keep the size in order to have the value of h0 hashfunction and we also have hashfuction h1 which is used for overflow. P shows the next bucket when an overflow happens. We transform the input word to a unsigned long using djb2 algorithm and after we compute f(word)%size. The computation of mod is using a mask and the logic AND (&), in order to speed up.
+
 #### String_Utils: 
 Line Manager:
-This structure handles input, init and work files. For our implementation we used 2 line managers(each for init and work files).
-We keep a buffer for each line read, which has size at first INIT_SIZE and in case of bigger lines, we handle it with realloc.
+    This structure handles input, init and work files. For our implementation we use 2 line managers(each for init and work files).
+    We keep a buffer for each line read, which has size at first INIT_SIZE and in case of bigger lines, we handle it with realloc.
 * lm_fetch_line(): reads a line from input file, keep it to input_buffer. In this fuction, spaces are erased and made \0 in order to seperate the words and we keep the upper limit of how many words are keep.
 * lm_fetch_ngram(): Keeps the start of ngram in line.
 * lm_fetch_word(): Returns words of current ngram that we work on.
 * lm_is_query/insert/delete(): Boolean return value for id of line detection.
 
 Result Manager:
-    This structure keeps a buffer of char that will be sent to output_file and an array of pointers to words that maybe will be included to my final result.
-    Each time a search is asked, result mananger works as below: 
-* rm_start: checks the size of char** buffer and handles any expansion and initialise variables that are related to output_buffer. (Call once for each request Q).
-* rm_new_ngram: initialise the buffer that keeps words. If rm_new_ngram is called, it means that a new ngram is examined. For example, in order to have an output like this : this is|this is a cat DO NOT CALL new_ngram, if output should be: this is|is a cat call new_ngram.
-* rm_append_word: add new words to temporary ngram
-* rm_detected: the words of char** buffer are a ngram so transfer them to output_buffer
-* rm_undetected: discard everything in char** buffer
-* rm_complete: give output_buffer to output file. If it is empty write -1.
+    This structure keeps a buffer of results of all the queries in a gust. Each time a ngram is inserted in the result, topk structure is informed in order to procced to the computation of topk.
+
+Each time a search is asked, result mananger works as below: 
+* rm_start: (Call once for each request Q) Informed that a new ngram is now under examination.
+* rm_detected: This function takes as argument how many words the result should take from current ngram and keep them in output_buffer. The new element of output result is given to the topk structure.
+* rm_complete: Line is over, adds a '\n' to result.
+* rm_display_result: Prints to outfile the result of gust.
+
+####Topk:
+
+Topk.c/h: 
+    This is our first try for finding the result of top K ngrams. A array of nodes of a word and a rank is created and each time a new word comes, binary search is done and if value is found rank is now rank++, or else if value is not in the array we insert that element to the right position. In general array is in alphabetical order. After the end of our gust, we have 2 kinds of ways in order to find the result.<l>In one way, we sort the array using quicksort in order to keep the alphabetical order and in the same time to sort the array using rank. Function <b>topk()</b>> prints the result for k top ngrams.</l>
+    <l>On the other way, we have an heuristic-greed algorithm, that each time searchs and prints the elements of array that have rank k, using <b>n_gram()</b>.
+    The heuristic way works better when a small k is asked. 
+    Nevertheless, this try was a little bit slow.
+    At the end of each gust, structure is reused <b>na_reuse()</b>, that means that we free only the words keep.
+
+Topk_hash.c/h:
+    In this structure we split the work of hash function in 2 parts. In the first part-insertion of a word, we use a hashtable with fixed size and a simple hashfunction. For each bucket of this hashtable, we keep the ngrams in alphabetical order and the max frequency found between this buckets.
+    After all insertions, we create an array of size, max frequency of all the values of hashtable, we translate the index as frequency and we keep for each frequency all the ngrams(in alphabetical order) that have this frequency.
+    Result is displayed from the end to the start.
 
 #### Filters
 Bloom Filter: 
