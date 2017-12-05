@@ -14,10 +14,6 @@ bool complete_phrase(char* line){
     return false;
 }
 
-int lm_n_gram_counter(line_manager* obj){
-    return obj->n_gram_counter;
-}
-
 char lm_get_file_status(line_manager *obj){
     return obj->file_status;
 }
@@ -304,8 +300,8 @@ void result_manager_fin(result_manager* obj){
     return;
 }
 
-/*Checks if word_size is bigger than max_words and empty-init word_buffer*/
-void rm_start(result_manager *obj,int max_words){
+/*Initialise first_available_slot of output buffer*/
+void rm_start(result_manager *obj){
     /*a new new ngram starts*/
     obj->first_available_slot=obj->buffer_start;
     return;
@@ -355,7 +351,7 @@ void rm_ngram_detected(result_manager* obj, TopK* top, line_manager *lm, int wor
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
 }
 
-/*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
+/*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
 void rm_completed(result_manager* obj){
     if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
@@ -367,6 +363,7 @@ void rm_completed(result_manager* obj){
     obj->buffer_start=obj->first_available_slot;
 }
 
+/*Print result of gust*/
 void rm_display_result(result_manager* obj){
     obj->output_buffer[obj->first_available_slot]='\0';
     fprintf(obj->output,"%s",obj->output_buffer);

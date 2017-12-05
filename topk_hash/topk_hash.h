@@ -4,6 +4,8 @@
 #define HASH_SIZE 99
 #define INIT_WORDLEN 128
 
+//In this part we use init_wordlen in order not to use malloc and free for each word, 
+//maybe later this side should be changed.
 typedef struct node{
     char word[INIT_WORDLEN];
     int freq;
@@ -22,7 +24,6 @@ typedef struct Hash{
 
 void Hash_init(Hash*);
 void Hash_fin(Hash*);
-//reuse structure, free char only
 void Hash_reuse(Hash* obj);
 
 void Hash_insert(Hash* obj, char* word, int word_len);

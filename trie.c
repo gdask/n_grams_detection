@@ -116,7 +116,7 @@ bool trie_delete(trie* obj,line_manager* lm){
 clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
 //clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
-    rm_start(rm,obj->max_height);
+    rm_start(rm);
     obj->reuse_filter(&obj->detected_nodes);
     char* eof = &lm->buffer[lm->line_end];
 
@@ -156,7 +156,7 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
 clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
 //clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
-    rm_start(rm,obj->max_height);
+    rm_start(rm);
     obj->reuse_filter(&obj->detected_nodes);
     char* eof = &lm->buffer[lm->line_end];
 

@@ -4,7 +4,7 @@
 #include "./filters/murmur3.h"
 #include <stdint.h>
 
-/*Same as ca_force append in trie_node but it returns a boolean if double(overflow) happend*/
+/*Same as ca_force append in trie_node, but it returns a boolean if double(overflow) happend*/
 bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
     bool doubled=false;
     if(goal_index == obj->Size || obj->First_Available_Slot == obj->Size){
@@ -28,15 +28,14 @@ bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
 unsigned long str_to_int(char *str){
     unsigned long hash = 5381;
     char* input=str;
-
     while(*input){
         hash = ((hash << 5) + hash) + *input;
         input++;
     }
-
     return hash;
 }
 
+/*h0*/
 int hash_function(hashtable* obj, char* str){
     //uint32_t code;
     //MurmurHash3_x86_32(str,strlen(str),0,&code);
@@ -46,6 +45,7 @@ int hash_function(hashtable* obj, char* str){
     return code & obj->mask;
 }
 
+/*h1*/
 int hash_function_overflow(hashtable* obj, char*str){
     //uint32_t code;
     //MurmurHash3_x86_32(str,strlen(str),0,&code);
@@ -56,25 +56,17 @@ int hash_function_overflow(hashtable* obj, char*str){
     return code & obj->ov_mask;
 }
 
+/*Return the right bucket to search word*/
 int hash_get_bucket(hashtable* obj, char* word){
+    //avoid calling hash_fuction by calling overflow(h1) and find h0 using subtraction
     int ov_key = hash_function_overflow(obj,word);
     //int und_key = ov_key %obj->init_size;
     int und_key = ov_key - obj->init_size;
     if(und_key >= obj->p) return und_key;
     return ov_key;
-
-    /*
-    if(ov_key < obj->p){
-        return ov_key;
-    }
-    else{
-        int und_key = oov_key - obj->init_size;
-        if(und_key >= obj->p) return und_key;
-        return ov_key;
-    }*/
-
 }
 
+//Initialise hashtable with ca_bucket_size Buckets and each bucket has bucket_size
 void hashtable_init(hashtable* obj, int ca_bucket_size, int bucket_size){
     obj->ca_bucket = malloc(sizeof(children_arr) * ca_bucket_size);
     if(obj->ca_bucket==NULL){
@@ -106,6 +98,7 @@ void hashtable_fin(hashtable* obj){
     free(obj->ca_bucket);
 }
 
+//Insert word
 trie_node* hashtable_insert(hashtable* obj, char* word){
     /*find if word is in or not, return also right position*/
     int pos=0;
@@ -137,23 +130,20 @@ trie_node* hashtable_insert(hashtable* obj, char* word){
         result = hashtable_search(obj, word, &pos);
     }
     return result.node_ptr;
-    //in case key==p maybe it changed pos
-
 }
 
+//Used in redistribute in order to delete a ngram from a bucket and relocate to new position
 void ca_bucket_delete(children_arr* obj, int goal_index){
     if(goal_index == obj->First_Available_Slot-1){
-        //tn_fin(&obj->Array[goal_index]);
         obj->First_Available_Slot--;
         return;
     }
-
     size_t movable =(obj->First_Available_Slot-goal_index-1)*sizeof(trie_node);
     memmove(&obj->Array[goal_index],&obj->Array[goal_index+1],movable);
     obj->First_Available_Slot--;
 }
 
-/*By saving init_size, I save my program from computing 2^round*/
+/*By saving init_size, i save my program from computing 2^round*/
 void update_round(hashtable* obj){
     /*Checks if new_size is divined by init_size pointer p ++*/
     if(obj->p==obj->init_size-1){
@@ -217,6 +207,7 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
     //int key=hash_function(obj, word);
     loc_res result;
     result=ca_locate_bin(&obj->ca_bucket[key], word);
+    //Using hash_get_bucket we are saved from the below
     /*if(key >= p){
         //choose bucket h(word) since bucket has not been split yet in current round 
         result=ca_locate_bin(&obj->ca_bucket[key], word);
