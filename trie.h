@@ -6,10 +6,11 @@
 #include "string_utils.h"
 #include "filters/bloom_filter.h"
 #include "filters/pointer_set.h"
+#include "filters/hash_pointer_set.h"
 #include <time.h>
 
 
-#define USE_BLOOM 0 //1 for bloom , 0 for pointer set
+#define WHICH_FILTER 1 // 2 for bloom, 1 for pointer set, 0 for 
 #define FILTER_INIT_SIZE 500
 
 struct trie{
@@ -18,10 +19,12 @@ struct trie{
     int ca_init_size;
     hashtable zero_level;
     size_t offset;
-    #if USE_BLOOM==1
+    #if WHICH_FILTER==2
     filter detected_nodes;
-    #else
+    #elif WHICH_FILTER==1
     pointer_set detected_nodes;
+    #else
+    hash_pset detected_nodes;
     #endif
     //pointers to filter(bloom or pointer_set) functions,because function overloading is not an option in c!
     void (*reuse_filter)(void* obj);

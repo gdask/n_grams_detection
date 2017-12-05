@@ -16,23 +16,29 @@ void trie_init(trie* obj,int init_child_arr_size){
     obj->max_height = 0;
     obj->dynamic = true;
     hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
-    #if USE_BLOOM == 1
+    #if WHICH_FILTER == 2
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
     obj->reuse_filter = (void*)&f_reuse;
     obj->ngram_unique = (void*)&f_append;
-    #else
+    #elif WHICH_FILTER == 1
     pointer_set_init(&obj->detected_nodes,FILTER_INIT_SIZE);
     obj->reuse_filter = (void*)&ps_reuse;
     obj->ngram_unique = (void*)&ps_append;
+    #else
+    hash_pset_init(&obj->detected_nodes,FILTER_INIT_SIZE);
+    obj->reuse_filter = (void*)&hash_pset_reuse;
+    obj->ngram_unique = (void*)&hash_pset_append;
     #endif
 }
 
 void trie_fin(trie* obj){
     hashtable_fin(&obj->zero_level);
-    #if USE_BLOOM == 1
+    #if WHICH_FILTER == 2
     filter_fin(&obj->detected_nodes);
-    #else
+    #elif WHICH_FILTER == 1
     pointer_set_fin(&obj->detected_nodes);
+    #else
+    hash_pset_fin(&obj->detected_nodes);
     #endif
 }
 
@@ -139,7 +145,6 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
             //NEW CHANGE
             if(current_node.node_ptr->final==true){
                 if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    //rm_ngram_detected(rm, na);
                     rm_ngram_detected(rm, top);
                 }
             }
@@ -176,7 +181,6 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
             rm_append_word(rm,current_word);
             if(current_node.node_ptr->final==true){
                 if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    //rm_ngram_detected(rm, na);
                     rm_ngram_detected(rm, top);
                 }
             }
@@ -203,7 +207,6 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
                     if(*buf1==true){
                         if(obj->ngram_unique(&obj->detected_nodes,buf1)){
                             rm_ngram_detected(rm, top);
-                            //rm_ngram_detected(rm,na);
                         }
                     }
                     //set buffers at next word
