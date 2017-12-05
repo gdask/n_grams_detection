@@ -59,7 +59,7 @@ void result_manager_init(result_manager* obj,FILE *fp); //Initilize struct
 void result_manager_fin(result_manager* obj); //Deallocates any malloced memory
 
 //Output functions
-void rm_start(result_manager *obj,int max_words);
+void rm_start(result_manager *obj);
 // ex: previous detected ngram "hello world" next ngram "|hello world [new words]"
 void rm_new_ngram(result_manager *obj);
 // appended at [new words]

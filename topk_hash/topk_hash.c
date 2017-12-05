@@ -70,6 +70,7 @@ void Hash_fin(Hash* obj){
     //printf("Freed words:%d nodes: %d buckets%d\n", w,n,b);
 }
 
+//reuse structure
 void Hash_reuse(Hash* obj){
     int i;
     if(obj->Bucket!=NULL){
