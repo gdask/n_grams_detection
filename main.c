@@ -36,6 +36,8 @@ int main(int argc,char* argv[]){
         exit(-1);
     }
 
+    /*char* inbuf=malloc(sizeof(char)*10000000);
+    setvbuf(query_file, inbuf, _IOFBF, 10000000);*/
 
     clock_t start,end;
     clock_t queries=0;

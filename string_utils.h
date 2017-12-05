@@ -24,15 +24,10 @@ struct line_manager{
 
 typedef struct result_manager{
     FILE *output;
-    char** word_buffer;
     char* output_buffer;
-    int bufsize;
     int output_bufsize;
     int first_available_slot; //first available slot to put words of word_buffer
-    char* current_ngram; //last ngram of output_buffer
-    int current_ngram_index; //keep where current ngram is starting
-    int current_word_index; //keep where current word is starting
-    int buffer_start;
+    int buffer_start; //output buffer of print result of queries
 }result_manager;
 
 typedef struct line_manager line_manager;
@@ -70,7 +65,7 @@ void rm_new_ngram(result_manager *obj);
 // appended at [new words]
 void rm_append_word(result_manager* obj,char* word);
 // "|hello world [new words]" is appended at the result
-void rm_ngram_detected(result_manager* obj, TopK* top);
+void rm_ngram_detected(result_manager* obj, TopK* top, line_manager *lm, int word_count);
 //void rm_ngram_detected(result_manager* obj, ngram_array* na);
 // "|hello world [new words]" will not be a part of the result
 void rm_ngram_undetected(result_manager* obj);

@@ -119,9 +119,11 @@ bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
                     obj->buffer[i]='\0';
                     ret = strtol(&obj->buffer[2], &ptr, 10);
                     //print result of topk
+                    
                     //using hash and array
-                    //rm_display_result(rm);
+                    rm_display_result(rm);
                     topk(top->Hash, ret);
+                    
                     //using array
                     //na_topk(na, ret);
                     //na_topk_sort(na, ret);
@@ -291,12 +293,6 @@ void result_manager_init(result_manager* obj,FILE *fp){
         exit(-1);
     }
     obj->output_bufsize=INIT_SIZE_BUF;
-    obj->word_buffer=(char**)malloc(sizeof(char*)*INIT_SIZE_BUF);
-    if(obj->word_buffer==NULL){
-        fprintf(stderr,"Malloc failed :: result_manager_init\n");
-        exit(-1);
-    }
-    obj->bufsize=INIT_SIZE_BUF;
     obj->first_available_slot=-1;
     obj->buffer_start=0;
 }
@@ -305,82 +301,28 @@ void result_manager_fin(result_manager* obj){
     if(obj->output_buffer!=NULL){
         free(obj->output_buffer);
     }
-    if(obj->word_buffer!=NULL){
-        free(obj->word_buffer);
-    }
     return;
 }
 
 /*Checks if word_size is bigger than max_words and empty-init word_buffer*/
 void rm_start(result_manager *obj,int max_words){
-    if(obj->bufsize<max_words){ //you need to allocate more memory
-        char** temp = (char**)realloc(obj->word_buffer, (obj->bufsize+(max_words-obj->bufsize))*sizeof(char*));
-        if(temp==NULL){
-            fprintf(stderr,"Realloc Failed :: rm_start\n");
-            exit(-1);
-        }
-        obj->word_buffer=temp;
-    }
     /*a new new ngram starts*/
     obj->first_available_slot=obj->buffer_start;
     return;
 }
 
-/*Now new ngram is entering to word buffer, so i want it clean and i dont mind of old ngram*/
-void rm_new_ngram(result_manager *obj){
-    obj->current_ngram=NULL;
-    obj->current_word_index=-1;
-    memset(obj->word_buffer, 0, obj->bufsize);
-}
-
-/*add in word_buffer a new pointer to word after the first available*/
-void rm_append_word(result_manager* obj,char* word){
-    int i;
-    i=obj->current_word_index;
-    i++;
-    /*check if a new word fits, maybe it doesnt need, because rm_start handles it but just in case*/
-    if(i>=obj->bufsize){
-        char** temp = (char**)realloc(obj->word_buffer, 2*obj->bufsize*sizeof(char*));
-        if(temp==NULL){
-            fprintf(stderr,"Realloc Failed :: rm_append_word\n");
-            exit(-1);
-        }
-        obj->word_buffer=temp;
-        obj->bufsize= 2*obj->bufsize*sizeof(char*);
-    }
-    //printf("new word is: %s\n", word);
-    obj->word_buffer[i]= word;
-    obj->current_word_index=i;
-    return;
-}
-
-/*This word is not a ngram, so i "clean" word_buffer*/
-void rm_ngram_undetected(result_manager* obj){
-    
-    memset(obj->word_buffer, 0, obj->bufsize);
-    /*make all buffer \0*/
-    obj->current_word_index=-1;
-    //printf("Undetected\n");
-    return;
-}
-
-/*Αdd all the words of word_buffer to output buffer plus one |
-if current_ngram==NULL that means that i dont need to strcpy last ngram of output buffer, else make a copy of that*/
+/*Αdd word_count of the words of line manager(current_ngram) to output buffer plus one |*/
 //Use of hash and array
-void rm_ngram_detected(result_manager* obj, TopK* top){
+void rm_ngram_detected(result_manager* obj, TopK* top, line_manager *lm, int word_count){
 //only array
 //void rm_ngram_detected(result_manager* obj, ngram_array* na){
-    int word_len=0;
-    int occupied_slots=obj->first_available_slot-1;
-    int n_gram_len=0;
-    int i=0;
+    //int i=0;
     int current_index=0;
-    /*check if current_ngram is null, so you can or not use last thing that was written in output_buffer*/
-    if(obj->current_ngram!=NULL){
-        /*check if it fits*/
-        n_gram_len=strlen(obj->current_ngram)+1; //i dont need |
-        if(n_gram_len+occupied_slots>=obj->output_bufsize){
-            //printf("made realloc n_gram\n");
+    char* p_ngram;
+    p_ngram=&lm->buffer[lm->n_gram_position];
+    current_index=obj->first_available_slot;
+    while(word_count>0){
+        if(obj->first_available_slot==obj->output_bufsize){
             char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
             if(temp==NULL){
                 fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
@@ -389,38 +331,18 @@ void rm_ngram_detected(result_manager* obj, TopK* top){
             obj->output_buffer=temp;
             obj->output_bufsize= 2*obj->output_bufsize;
         }
-        //strncpy(&obj->output_buffer[obj->first_available_slot-1], obj->current_ngram, n_gram_len-1);
-        memmove(&obj->output_buffer[obj->first_available_slot], obj->current_ngram, n_gram_len-1);
-        obj->output_buffer[obj->first_available_slot+n_gram_len-2]=' '; // if it dont counts /0 else i will test word_len-1
-        obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
-        current_index=obj->first_available_slot;
-        obj->first_available_slot=obj->first_available_slot+n_gram_len-1;
-        occupied_slots=occupied_slots+n_gram_len;
-    }
-    else{
-        current_index=obj->first_available_slot;
-        obj->current_ngram=&obj->output_buffer[obj->first_available_slot];
-    }
-    while(obj->word_buffer[i]!='\0'){
-        //printf("Word read:%s\n",obj->word_buffer[i]);
-        /*find and copy to first available slot in output_buffer*/
-        word_len=strlen(obj->word_buffer[i])+1;
-        if(occupied_slots+word_len+1>=obj->output_bufsize){
-            char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
-            if(temp==NULL){
-                fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
-                exit(-1);
+        if(*p_ngram=='\0'){
+            while(*p_ngram=='\0'){
+                p_ngram++;
             }
-            obj->output_buffer=temp;
-            obj->output_bufsize= 2*obj->output_bufsize;
+            word_count--;
+            obj->output_buffer[obj->first_available_slot]=' ';
         }
-        
-        strcpy(&obj->output_buffer[obj->first_available_slot], obj->word_buffer[i]);
-        strcat(&obj->output_buffer[obj->first_available_slot], " ");
-        
-        obj->first_available_slot=obj->first_available_slot+word_len;
-        occupied_slots=occupied_slots+word_len;
-        i++;
+        else{
+            obj->output_buffer[obj->first_available_slot]=*p_ngram;
+            p_ngram++;
+        }
+        obj->first_available_slot++;
     }
     obj->output_buffer[obj->first_available_slot-1]='\0';
     int len=0;
@@ -431,27 +353,18 @@ void rm_ngram_detected(result_manager* obj, TopK* top){
     //na_lookup(na, &obj->output_buffer[current_index], len);
     /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
-    memset(obj->word_buffer, 0, obj->bufsize);
-    obj->current_word_index=-1;
 }
 
 /*Print everything in buffer, buffer_end is the end of output and is probably | so i dont print it*/
 void rm_completed(result_manager* obj){
     if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
-        //fprintf(obj->output,"-1\n");
         obj->first_available_slot=obj->first_available_slot+3;
     }    
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
-        //fprintf(obj->output,"%s\n",obj->output_buffer);
-        /*clean output_buffer and word_buffer*/
-        //memset(obj->output_buffer,0, obj->output_bufsize);
-        //memset(obj->word_buffer,0, obj->bufsize);
     }
     obj->buffer_start=obj->first_available_slot;
-    obj->current_ngram=NULL;
-    obj->current_word_index=-1;
 }
 
 void rm_display_result(result_manager* obj){
