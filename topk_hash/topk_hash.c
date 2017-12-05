@@ -75,7 +75,7 @@ void Hash_reuse(Hash* obj){
     if(obj->Bucket!=NULL){
         for(i=0;i<HASH_SIZE; i++){
             if(obj->Bucket[i].Node!=NULL){
-                int j;
+                /*int j;
                 for(j=0; j<obj->Bucket[i].first_available_slot;j++){
                     if(obj->Bucket[i].Node[j].word!=NULL){
                         //fprintf(stderr, "%s\n",obj->Bucket[i].Node[j].word);
@@ -83,7 +83,7 @@ void Hash_reuse(Hash* obj){
                         obj->Bucket[i].Node[j].freq=0;
                     }
 
-                }
+                }*/
                 obj->Bucket[i].first_available_slot=0;
                 obj->Bucket[i].max_freq=0;
             }
@@ -114,11 +114,11 @@ void bucket_insert(bucket* obj, char* word, int goal_index, int word_len){
     }
     //create node
     obj->Node[goal_index].freq=1;
-    obj->Node[goal_index].word=malloc(word_len);
+    /*obj->Node[goal_index].word=malloc(word_len);
     if(obj->Node[goal_index].word==NULL){
         fprintf(stderr, "Error in malloc::bucket_insert\n");
          exit(-1);
-    }
+    }*/
     strncpy(obj->Node[goal_index].word, word, word_len);
     obj->first_available_slot++;
 }
@@ -133,7 +133,15 @@ void Hash_insert(Hash* obj, char* word, int word_len){
     int middle = (lower_bound+upper_bound)/2;
 
     while(lower_bound <= upper_bound){
+            
             int cmp_res = 0;
+           /*char* com1 = obj->Bucket[key].Node[middle].word;
+            char* com2 = word;
+            while(*com1!='\0' && *com1==*com2){
+                com1++;
+                com2++;
+            }
+            cmp_res = *com1 - *com2;*/
             cmp_res=strcmp(obj->Bucket[key].Node[middle].word, word);
             if(cmp_res < 0){
                 lower_bound = middle + 1;

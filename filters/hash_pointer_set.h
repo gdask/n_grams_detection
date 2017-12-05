@@ -5,11 +5,14 @@
 #include <stdint.h>
 
 #define PSET_INIT 4
+#define PTR_SIZE sizeof(void*)
 
+//Array of pointer sets
 typedef struct hash_pset{
     pointer_set* pset_Arr;
     int size;
     int mask;
+    bool used;
 }hash_pset;
 
 void hash_pset_init(hash_pset* obj,int init_size);

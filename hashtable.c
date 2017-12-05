@@ -27,16 +27,13 @@ bool ca_bucket_append(children_arr* obj, char* input_word, int goal_index){
 /*djb2, to turn a string to int*/
 unsigned long str_to_int(char *str){
     unsigned long hash = 5381;
-    //int c;
     char* input=str;
 
-    //while (c = *str++){
-    //    hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    //}
     while(*input){
         hash = ((hash << 5) + hash) + *input;
         input++;
     }
+
     return hash;
 }
 
@@ -216,11 +213,11 @@ loc_res hash_lookup(hashtable* obj, char* word){
 }
 
 loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
-    int key=hash_function(obj, word);
+    int key=hash_get_bucket(obj, word);
+    //int key=hash_function(obj, word);
     loc_res result;
-    int p=obj->p;
-
-    if(key >= p){
+    result=ca_locate_bin(&obj->ca_bucket[key], word);
+    /*if(key >= p){
         //choose bucket h(word) since bucket has not been split yet in current round 
         result=ca_locate_bin(&obj->ca_bucket[key], word);
     }
@@ -228,7 +225,7 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
         //choose bucket from h_overflow(word)
         key=hash_function_overflow(obj, word);
         result=ca_locate_bin(&obj->ca_bucket[key], word);
-    }
+    }*/
     *bucket=key;
     return result;
 }

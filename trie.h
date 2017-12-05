@@ -10,7 +10,7 @@
 #include <time.h>
 
 
-#define WHICH_FILTER 1 // 2 for bloom, 1 for pointer set, 0 for 
+#define WHICH_FILTER 0 // 2 for bloom, 1 for pointer set, 0 for hash pointer set 
 #define FILTER_INIT_SIZE 500
 
 struct trie{

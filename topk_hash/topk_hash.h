@@ -2,9 +2,10 @@
 #ifndef TOPK_HASH_H
 #define TOPK_HASH_H
 #define HASH_SIZE 99
+#define INIT_WORDLEN 128
 
 typedef struct node{
-    char* word;
+    char word[INIT_WORDLEN];
     int freq;
 }node;
 
