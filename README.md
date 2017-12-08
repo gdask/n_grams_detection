@@ -45,7 +45,7 @@ Each time a search is asked, result mananger works as below:
 * rm_complete: Line is over, adds a '\n' to result.
 * rm_display_result: Prints to outfile the result of gust.
 
-####Topk:
+#### Topk:
 
 Topk.c/h: 
     This is our first try for finding the result of top K ngrams. A array of nodes of a word and a rank is created and each time a new word comes, binary search is done and if value is found rank is now rank++, or else if value is not in the array we insert that element to the right position. In general array is in alphabetical order. After the end of our gust, we have 2 kinds of ways in order to find the result.<l>In one way, we sort the array using quicksort in order to keep the alphabetical order and in the same time to sort the array using rank. Function <b>topk()</b>> prints the result for k top ngrams.</l>
@@ -66,24 +66,19 @@ Bloom Filter:
 Pointer_set: 
     During the query execution,we could identify every unique n_gram from the pointer of its last trie_node. So we use that property to filter any duplicate n_gram in a query. Pointer set append has O(nlogn) complexity. Testing proved that pointer set is faster than bloom filter. So we end up use this than bloom filter.
 
-#### Hashtable:
-
-#### Top_K:
-
-#### Part 2 medium dynamic dataset:
-##### i7 @ 1,8 ghz & hdd:
-* Elapsed time without optimization: _ sec
-* Elapsed time with O3 optimization: _ sec
-##### i5 @ 2,4 ghz & ssd (on virtual machine):
-* Elapsed time without optimization: _ sec
-* Elapsed time with O3 optimization: _ sec
-#### Part 2 medium static dataset:
-##### i7 @ 1,8 ghz & hdd:
-* Elapsed time without optimization: _ sec
-* Elapsed time with O3 optimization: _ sec
-##### i5 @ 2,4 ghz & ssd (on virtual machine):
-* Elapsed time without optimization: _ sec
-* Elapsed time with O3 optimization: _ sec
+#### Tests on: i5 @ 2,4 ghz & ssd (on virtual machine):
+##### Part 2 medium dynamic dataset:
+* Elapsed time without optimization: 31.237606 sec
+* Elapsed time with O2 optimization: 19.660120 sec
+##### Part 2 medium static dataset:
+* Elapsed time without optimization: 25.744551 sec
+* Elapsed time with O2 optimization: 16.248623 sec
+##### Part 2 small dynamic dataset:
+* Elapsed time without optimization: 0.878625 sec
+* Elapsed time with O2 optimization: 0.422589 sec
+##### Part 2 small static dataset:
+* Elapsed time without optimization: 0.814838 sec
+* Elapsed time with O2 optimization: 0.379916 sec
 
 #### Part 1 small dataset:
 ##### i7 @ 1,8 ghz & hdd:

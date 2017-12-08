@@ -114,6 +114,24 @@ bool f_lookup(filter* obj,void* input){
     }
     return false;
 }
+/*
+uint32_t hashint_1( uint64_t a){
+    a = (a^0xdeadbeef) + (a<<4);
+    a = a ^ (a>>10);
+    a = a + (a<<7);
+    a = a ^ (a>>13);
+    return a;
+}
+
+uint32_t hashint_2( uint64_t a){
+    a = (a+0x7ed55d16) + (a<<12);
+    a = (a^0xc761c23c) ^ (a>>19);
+    a = (a+0x165667b1) + (a<<5);
+    a = (a+0xd3a2646c) ^ (a<<9);
+    a = (a+0xfd7046c5) + (a<<3);
+    a = (a^0xb55a4f09) ^ (a>>16);
+    return a;
+}*/
 
 #if OPT == 0 //NON OPTIMIZED
 void f_hash(filter* obj,void* input){
@@ -130,8 +148,11 @@ void f_hash(filter* obj,void* input){
     MurmurHash3_x86_32(&input,sizeof(void*),h1,&h2);
 
     for(i=0;i<OPT_K;i++){
-        //obj->hashes[i] = (h1 + (h2>>(i))) &MASK;
         obj->hashes[i] = (h1 + (h2*(i))) >>SWIFT;
     }
+    /*uint32_t h1 = hashint_1((size_t)input);
+    uint32_t h2 = hashint_2((size_t)input);
+    int i;
+    for(i=0;i<OPT_K;i++) obj->hashes[i] = (h1 + (h2*(i))) >> SWIFT;*/
 }
 #endif

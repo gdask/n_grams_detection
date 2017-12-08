@@ -350,7 +350,7 @@ void insertNode(maxHeap *obj, int data, char* ngram) {
 //start from root-start=0 and print k top ngrams
 void topK(maxHeap *obj, int start){
     int i=start;
-    int rem;
+    //int rem;
     if(obj->k!=0 && i<obj->FirstAvailableSlot){
         if(obj->k==1){
             printf("%s\n", obj->elem[i].ngram);
