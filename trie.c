@@ -13,8 +13,8 @@ void trie_init(trie* obj,int init_child_arr_size){
     //fprintf(stderr,"obj on %p, ca on %p\n",pt,(void*)pt+obj->offset);
 
     obj->ca_init_size = init_child_arr_size;
-    obj->max_height = 0;
     obj->dynamic = true;
+    obj->version=0;
     hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
     #if WHICH_FILTER == 2
     filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
@@ -51,21 +51,16 @@ void trie_insert(trie* obj,line_manager* lm){
     char* current_word = lm_fetch_word(lm);
     if(current_word==NULL) return;
     trie_node* current_node = hashtable_insert(&obj->zero_level,current_word);
-    if(current_node==NULL){
+    /*if(current_node==NULL){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
         exit(-1);
-    }
-    int height=1;
+    }*/
     current_word = lm_fetch_word(lm);
     while(current_word!=NULL){
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
-        height++;
         current_word = lm_fetch_word(lm);
     }
-    tn_set_final(current_node);
-    if(height > obj->max_height){
-        obj->max_height = height;
-    }
+    tn_set_final(current_node,obj->version);
 }
 
 bool trie_delete(trie* obj,line_manager* lm){
@@ -110,7 +105,7 @@ bool trie_delete(trie* obj,line_manager* lm){
     }
 
     if(tn_has_child(current.node_ptr)==true){
-        tn_unset_final(current.node_ptr);
+        tn_unset_final(current.node_ptr,obj->version);
     }
     else{
         //deletes entire path from last_fork to leaf
@@ -119,7 +114,7 @@ bool trie_delete(trie* obj,line_manager* lm){
     return true;
 }
 
-clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
+clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager* rm, TopK* top){
 //clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
     rm_start(rm);
@@ -127,7 +122,6 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
     char* eof = &lm->buffer[lm->line_end];
 
     while(lm_fetch_ngram(lm)){
-        //rm_new_ngram(rm);
         char* current_word = lm_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
@@ -142,7 +136,10 @@ clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
             if(current_node.node_ptr==NULL) break;
             words_found++;
             //NEW CHANGE
-            if(current_node.node_ptr->final==true){
+            if(current_node.node_ptr->final){
+                //Version check
+                //if(current_node.node_ptr->version.added > version) break;
+                //if(current_node.node_ptr->version.deleted <= version) break;
                 if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
                     rm_ngram_detected(rm, top, lm, words_found);
                 }
@@ -222,44 +219,6 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
     rm_completed(rm);
     return clock() - start;
 }
-
-//It doesnt work with the last hyper node version
-/*void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current){
-    char* current_word = lm_fetch_word(lm);
-    char* hyper_word = current->Word_Vector + strlen(current->Word_Vector)+1;
-    short* metadata = current->Word_Info + 1;
-    size_t bytes;
-    bool final;
-    while(current_word!=NULL){
-        if(*metadata<0){
-            bytes = -*metadata;
-            final = false;
-        }
-        else if(*metadata>0){
-            bytes = *metadata;
-            final = true;
-        }
-        else{
-            //HYPER NODE DOESNT HAVE ANY OTHER WORD
-            return;
-        }
-        if(strcmp(current_word,hyper_word)!=0){
-            //rm_ngram_undetected(rm);
-            return;
-        }
-        rm_append_word(rm,current_word);
-        if(final==true){
-            if(obj->ngram_unique(&obj->detected_nodes,hyper_word)==true){
-                rm_ngram_detected(rm, na);
-            }
-        }
-        metadata++;
-        hyper_word += bytes;
-        current_word = lm_fetch_word(lm);
-    }
-    return;
-}*/
-
 
 void trie_compress(trie* obj){
     if(obj->dynamic==false){

@@ -110,7 +110,7 @@ int main(int argc,char* argv[]){
             }
             else if(lm_is_query(&lm)==true){
                 //queries+=trie_search(&db,&lm,&rm, &na);
-                queries+=trie_search(&db,&lm,&rm, &t);
+                queries+=trie_search(&db,0,&lm,&rm, &t);
             }
             else{
                 fprintf(stderr,"Corrupted line\n");

@@ -15,12 +15,11 @@ typedef struct trie_node trie_node;
 typedef struct children_arr children_arr;
 typedef struct hyper_node hyper_node;
 
-struct locate_result{
+typedef struct locate_result{
 	int index;
 	trie_node* node_ptr;
 	int string_length;
-};
-typedef struct locate_result loc_res;
+} loc_res;
 
 //children has an array that contain pointers to trie nodes in alphabetical order.
 //Array size starts with Init_Size and doubles everytime the array is full.
@@ -42,11 +41,17 @@ void ca_force_delete(children_arr* obj,int goal_index);
 //Binary search on childern array,returns a locate_result struct.
 loc_res ca_locate_bin(children_arr* obj,char* input_word);
 
+typedef struct time_stamps{
+	unsigned int added;
+	unsigned int deleted;
+} time_stamps;
+
 struct trie_node {
 	char mode;
 	char* Word;
 	bool final;
 	children_arr next;
+	time_stamps version;
 };
 //External functions
 //Initilalizers for different purposes
@@ -57,8 +62,8 @@ void tn_fin(trie_node* obj);
 //Queries functions
 trie_node* tn_lookup(trie_node* obj,char* input_word);
 trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word);
-void tn_set_final(trie_node* obj);
-void tn_unset_final(trie_node* obj);
+void tn_set_final(trie_node* obj,unsigned int add_version);
+void tn_unset_final(trie_node* obj,unsigned int del_version);
 bool tn_has_fork(trie_node* obj);
 bool tn_has_child(trie_node* obj);
 

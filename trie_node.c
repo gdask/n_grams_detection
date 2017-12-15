@@ -118,11 +118,13 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     }
 }
 
-void tn_set_final(trie_node* obj){
+void tn_set_final(trie_node* obj,unsigned int add_version){
+    obj->version.added=add_version;
     obj->final=true;
 }
 
-void tn_unset_final(trie_node* obj){
+void tn_unset_final(trie_node* obj,unsigned int del_version){
+    obj->version.deleted=del_version;
     obj->final=false;
 }
 
@@ -179,7 +181,6 @@ void tn_print_subtree(trie_node* obj){
 
     for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i]);
 }
-
 
 void ca_init(children_arr* obj,int init_size){
     #if DEBUG != 0

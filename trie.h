@@ -14,8 +14,8 @@
 #define FILTER_INIT_SIZE 500
 
 struct trie{
+    unsigned int version;
     bool dynamic;
-    int max_height;
     int ca_init_size;
     hashtable zero_level;
     size_t offset;
@@ -29,7 +29,6 @@ struct trie{
     //pointers to filter(bloom or pointer_set) functions,because function overloading is not an option in c!
     void (*reuse_filter)(void* obj);
     bool (*ngram_unique)(void* obj,void* input);
-
 };
 typedef struct trie trie;
 
@@ -38,10 +37,14 @@ void trie_fin(trie* obj);
 void trie_insert(trie* obj,line_manager* lm);
 //clock_t trie_search(trie* obj,line_manager* lm,result_manager *rm, ngram_array* na);
 //clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na);
-clock_t trie_search(trie* obj,line_manager* lm,result_manager *rm, TopK* top);
+clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager *rm, TopK* top);
 clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top);
 //void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current);
 bool trie_delete(trie* obj,line_manager* lm);
+//Deleted node pointers stays waiting this function until are permantly removed from trie.
+void trie_remove_deleted_nodes(trie* obj);
+//Version ++
+void trie_update_version(trie* obj);
 void trie_compress(trie* obj);
 
 
