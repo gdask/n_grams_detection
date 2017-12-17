@@ -4,8 +4,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define HYPER_NODE_OPT 1
 #define INIT_SIZE 2
 #define HYPER_VECTOR_INIT 32
+#define HYPER_DATA_INIT 8
 #define DEBUG 0
 
 struct trie_node;
@@ -77,6 +79,7 @@ bool tn_is_normal(trie_node* obj);
 //Debug purpose printing function
 void tn_print_subtree(trie_node* obj);
 
+#if HYPER_NODE_OPT == 1
 struct hyper_node{
 	char mode;
 	char* Word_Vector;
@@ -84,6 +87,17 @@ struct hyper_node{
 	uint vector_size;
 	uint entries;
 };
+#else
+struct hyper_node{
+	char mode;
+	char* Word_Vector;
+	bool first_final;
+	short* Word_Info;
+	//word_info[last_word+1]=0
+	uint vector_size;
+	uint info_size;
+};
+#endif
 
 void hyper_node_init(hyper_node* obj);
 void hyper_node_fin(hyper_node* obj);

@@ -153,6 +153,7 @@ clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager* rm, T
     return clock() - start;
 }
 
+#if HYPER_NODE_OPT == 1
 clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
 //clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
     clock_t start = clock();
@@ -219,6 +220,83 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
     rm_completed(rm);
     return clock() - start;
 }
+#else
+clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
+//clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+    clock_t start = clock();
+    rm_start(rm);
+    obj->reuse_filter(&obj->detected_nodes);
+    char* eof = &lm->buffer[lm->line_end];
+
+    while(lm_fetch_ngram(lm)){
+        //rm_new_ngram(rm);
+        char* current_word = lm_fetch_word(lm);
+        loc_res current_node;
+        int words_found=0;
+
+        //Search first word in hash table
+        if(current_word==NULL) continue;
+        int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
+        //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
+        current_node.node_ptr = (void*)&obj->zero_level.ca_bucket[target_bucket] - obj->offset;
+
+        while(current_word < eof){
+            current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
+            if(current_node.node_ptr==NULL) break;
+            words_found++;
+            if(current_node.node_ptr->final==true){
+                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
+                    rm_ngram_detected(rm, top, lm, words_found);
+                }
+            }
+            current_word += current_node.string_length+1;
+            while(*current_word=='\0') current_word++;
+
+            if(current_node.node_ptr->mode=='s'){ //hyper node
+                //set word info at second word
+                short* info = ((hyper_node*)current_node.node_ptr)->Word_Info + 1;
+                //set buf at the second hyper node word
+                char* buf1 = ((hyper_node*)current_node.node_ptr)->Word_Vector +current_node.string_length;
+                //set input buffer at next word
+                char* buf2 = current_word;
+                //compare buffers
+                while(current_word < eof){
+                    //get word info
+                    int len = *info;
+                    bool final = true;
+                    if(len==0) break;
+                    if(len<0){
+                        len *=-1;
+                        final=false;
+                    }
+                    //compare buffers char by char
+                    while(len > 0 && *buf1==*buf2 && *buf2!='\0'){
+                        buf1++;
+                        buf2++;
+                        len--;
+                    }
+                    if(len!=0 || (len==0 && *buf2!='\0'))break;
+
+                    //Words are the same
+                    words_found++;
+                    if(final==true){
+                        if(obj->ngram_unique(&obj->detected_nodes,buf1)){
+                            rm_ngram_detected(rm, top, lm, words_found);
+                        }
+                    }
+                    //set buffers at next word
+                    info++;
+                    while(*buf2=='\0') buf2++;
+                    current_word = buf2;
+                }
+                break;
+            }
+        }
+    }
+    rm_completed(rm);
+    return clock() - start;
+}
+#endif
 
 void trie_compress(trie* obj){
     if(obj->dynamic==false){

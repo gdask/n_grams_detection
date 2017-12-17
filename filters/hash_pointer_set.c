@@ -64,6 +64,7 @@ void hash_pset_init(hash_pset* obj,int init_size){
 void hash_pset_fin(hash_pset* obj){
     int i;
     for(i=0;i<obj->size;i++) pointer_set_fin(&obj->pset_Arr[i]);
+    free(obj->pset_Arr);
 }
 
 void hash_pset_reuse(hash_pset* obj){

@@ -59,13 +59,6 @@ bool tn_is_normal(trie_node* obj){
     return false;
 }
 
-/*bool tn_is_head(trie_node* obj){
-    if(obj->mode=='h' && obj->next.Initialized==true){
-        return true;
-    }
-    return false;
-}*/
-
 void tn_fin(trie_node* obj){
     if(obj->mode=='s'){
         hyper_node_fin((hyper_node*)obj);
@@ -149,6 +142,7 @@ bool tn_has_child(trie_node* obj){
     return true;
 }
 
+#if HYPER_NODE_OPT == 1
 void tn_print_subtree(trie_node* obj){
     if(tn_is_leaf(obj)==true){
         fprintf(stderr,"Leaf node on %p ,Word= %s ,Final = %s \n\n",obj,obj->Word,btoa(obj->final));
@@ -181,6 +175,44 @@ void tn_print_subtree(trie_node* obj){
 
     for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i]);
 }
+#else
+void tn_print_subtree(trie_node* obj){
+    if(tn_is_leaf(obj)==true){
+        fprintf(stderr,"Leaf node on %p ,Word= %s ,Final = %s \n\n",obj,obj->Word,btoa(obj->final));
+        return;
+    }
+    else if(tn_is_normal(obj)==true){
+        fprintf(stderr,"Normal node on %p ,Word= %s ,Final = %s \n",obj,obj->Word,btoa(obj->final));
+    }
+    else if(obj->mode=='s'){
+        fprintf(stderr,"Hyper node on %p Contains:",obj);
+        int j=0;
+        hyper_node *tmp = (hyper_node*)obj;
+        char* current_word = tmp->Word_Vector;
+        int curr_info;
+        while(1){
+            curr_info = tmp->Word_Info[j];
+            if(curr_info==0) break;
+            fprintf(stderr," %s|%d ",current_word,curr_info);
+            if(curr_info>0) current_word += curr_info;
+            else current_word += - curr_info;
+            j++;
+        }
+        fprintf(stderr,"\n");
+        return;
+    }
+    else{
+        fprintf(stderr,"tn_print_subtree called on an invalid object %p\n",obj);
+        exit(-1);
+    }
+    fprintf(stderr,"Size of children_array = %d ,Children ptr = ",obj->next.Size);
+    int i;
+    for(i=0;i<obj->next.First_Available_Slot;i++) fprintf(stderr," %p ",&obj->next.Array[i]);
+    fprintf(stderr,"\n\n");
+
+    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i]);
+}
+#endif
 
 void ca_init(children_arr* obj,int init_size){
     #if DEBUG != 0
@@ -305,16 +337,42 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     int middle = (lower_bound+upper_bound)/2;
 
     while(lower_bound <= upper_bound){
-        //int cmp_res = strcmp(obj->Array[middle].Word,input_word);
         //Handmade strcmp in order to avoid further function calls
         int cmp_res = 0;
         char* com1 = obj->Array[middle].Word;
         char* com2 = input_word;
+        #if HYPER_NODE_OPT == 1 //Treats hyper node as trie node
         while(*com1!='\0' && *com1==*com2){
             com1++;
             com2++;
         }
         cmp_res = *com1 - *com2;
+        #else
+        if(obj->Array[middle].mode!='s'){ //Normal Behavior for trie nodes
+            while(*com1!='\0' && *com1==*com2){
+                com1++;
+                com2++;
+            }
+            cmp_res = *com1 - *com2;
+        }
+        else{ //In case of hyper node checks the first word
+            //ASSUMING THAT THERE IS AT LEAST ONE WORD IN HYPER NODE
+            hyper_node* node = (hyper_node*)&obj->Array[middle];
+            int len = node->Word_Info[0];
+            if(len < 0) len *= -1;
+            while( len>0  && *com1==*com2 && *com2!='\0'){
+                com1++;
+                com2++;
+                len--;
+            }
+            if(len!=0) cmp_res = *com1 - *com2;
+            else if(*com2=='\0') cmp_res = 0;
+            else cmp_res = '\0' - *com2;
+            /*cmp_res = strncmp(com1,com2,len);
+            com2 +=len;
+            if(cmp_res==0 && *com2!='\0') cmp_res = '\0' - *com2;*/
+        }
+        #endif
         
         if(cmp_res < 0){
             lower_bound = middle + 1;
@@ -336,6 +394,7 @@ loc_res ca_locate_bin(children_arr* obj,char* input_word){
     return result;
 }
 
+#if HYPER_NODE_OPT == 1
 void hyper_node_init(hyper_node* obj){
     obj->mode = 's';
     obj->first_final = false;
@@ -347,11 +406,30 @@ void hyper_node_init(hyper_node* obj){
     }
     obj->vector_size = HYPER_VECTOR_INIT;
 }
+#else
+void hyper_node_init(hyper_node* obj){
+    obj->mode = 's';
+    obj->first_final = false;
+    obj->Word_Vector=malloc(HYPER_VECTOR_INIT*sizeof(char));
+    obj->Word_Info = malloc(HYPER_DATA_INIT*sizeof(short));
+    if(obj->Word_Vector==NULL || obj->Word_Info==NULL){
+        fprintf(stderr,"hyper init: malloc failed\n");
+        exit(-1);
+    }
+    obj->vector_size = HYPER_VECTOR_INIT;
+    obj->info_size = HYPER_DATA_INIT;
+    obj->Word_Info[0]=0;
+}
+#endif
 
 void hyper_node_fin(hyper_node* obj){
     free(obj->Word_Vector);
+    #if HYPER_NODE_OPT != 1
+    free(obj->Word_Info);
+    #endif
 }
 
+#if HYPER_NODE_OPT == 1
 bool hyper_node_insert(hyper_node* obj,trie_node* input){
     trie_node* current=input;
     int First_Available_Slot = 0; //CALLING MORE THAN ONE TIMES INSERT WILL FAIL CAUSE OF THAT
@@ -387,6 +465,50 @@ bool hyper_node_insert(hyper_node* obj,trie_node* input){
     tn_fin(input);
     return true;
 }
+#else
+bool hyper_node_insert(hyper_node* obj,trie_node* input){
+    if(input->final==true) obj->first_final = true;
+    trie_node* current=input;
+    int entries = 0; //INSERT IS VALID ONLY THE FIRST TIME,CAUSE OF THAT
+    int First_Available_Slot = 0; //AND THAT
+    while(current!=NULL){
+        size_t available_space = obj->vector_size - First_Available_Slot;
+        size_t word_length = strlen(current->Word); //+1 FOR NULL AT THE END OF THE WORD
+        //Realloc if any resource is full
+        while(available_space <= word_length){
+            obj->Word_Vector = realloc(obj->Word_Vector,2*obj->vector_size);
+            if(obj->Word_Vector==NULL){
+                fprintf(stderr,"hyper insert realloc failed\n");
+                exit(-1);
+            }
+            obj->vector_size *=2;
+            available_space = obj->vector_size-First_Available_Slot;
+        }
+        if(entries == obj->info_size-2){
+            obj->Word_Info = realloc(obj->Word_Info,obj->info_size*2);
+            if(obj->Word_Info==NULL){
+                fprintf(stderr,"hyper insert realloc failed\n");
+                exit(-1);
+            }
+            obj->info_size *=2;
+        }
+        //INSERT WORD
+        strncpy(&obj->Word_Vector[First_Available_Slot],current->Word,word_length);
+        obj->Word_Info[entries] = word_length;
+        if(current->final==false) obj->Word_Info[entries] *= -1;
+        obj->Word_Info[entries+1] = 0;
+        First_Available_Slot += word_length;
+        entries++;
+        //Next node
+        if(tn_has_child(current)==true) current = &current->next.Array[0];
+        else current = NULL;
+    }
+    //Destructs path
+    obj->Word_Vector[First_Available_Slot]='\0';
+    tn_fin(input);
+    return true;
+}
+#endif
 
 //Always call for depth=0
 bool ca_compress(children_arr* obj,int depth){
