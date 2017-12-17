@@ -4,8 +4,8 @@
 #define INIT_SIZE_BUF 512
 #include <stdbool.h>
 #include <stdio.h>
-//#include "topk.h"
-#include "./topk_hash/topk_hash.h"
+//#include "./topk/topk.h"
+#include "./topk/topk_hash.h"
 
 struct line_manager{
     FILE *input;
