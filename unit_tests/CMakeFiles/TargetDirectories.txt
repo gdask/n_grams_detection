@@ -1,3 +1,0 @@
-/home/eirini/project/n_grams_detection/unit_tests/CMakeFiles/edit_cache.dir
-/home/eirini/project/n_grams_detection/unit_tests/CMakeFiles/rebuild_cache.dir
-/home/eirini/project/n_grams_detection/unit_tests/CMakeFiles/runTests.dir

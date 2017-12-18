@@ -7,7 +7,7 @@
 #define INIT_SIZE_HEAP 4
 
 #include <stdbool.h>
-#include "topk.h"
+#include "./topk/topk.h"
 
 typedef struct maxHeap{
     int size ;
