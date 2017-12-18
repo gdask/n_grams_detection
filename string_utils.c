@@ -57,18 +57,21 @@ bool lm_is_delete(line_manager* obj){
     return false;
 }
 
+bool lm_is_F(line_manager* obj){
+    if(obj->line_status=='F'){
+        return true;
+    }
+    return false;
+}
+
 /*  
     lm_fetch_line need to know the status of file(init file='I', query file= 'Q')
-    -Gets a line from file, handles bigger lines than expected
+    -Reads a line from file, handles bigger lines than expected
     -Keep key of action (A,Q,D)
     -Replace \n and _ with Null
     -Init n_gram
 */
-bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
-//bool lm_fetch_line(line_manager* obj, ngram_array* na){
-    /*clear obj->buffer just in case*/
-    //memset(obj->buffer, 0, obj->buffer);
-
+bool lm_fetch_line(line_manager* obj){
     if(obj->buffer==NULL){
         fprintf(stderr,"Object is not initisialised:: lm_fetch_line\n");
         exit(-1);
@@ -102,37 +105,13 @@ bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
     
         /*Valid Task Recognition*/
         if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
-            //In case of F you just ignore this line and get the next one.
-            if(obj->buffer[0]=='F'){
-                rm_display_result(rm);
-                if(obj->buffer[1]==' '){
-                    char *ptr;
-                    long ret;
-                    int i=0;
-                    while(obj->buffer[i]!='\n'){
-                        i++;
-                    }
-                    obj->buffer[i]='\0';
-                    ret = strtol(&obj->buffer[2], &ptr, 10);
-                    //print result of topk
-                    
-                    //using hash and array
-                    rm_display_result(rm);
-                    topk(top->Hash, ret);
-                    
-                    //using array
-                    //na_topk(na, ret);
-                    //na_topk_sort(na, ret);
-                }
-                
-                //reuse topk structure
-                Hash_reuse(top->Hash);
-                //na_reuse(na);
-                return lm_fetch_line(obj, top, rm);
-                //return lm_fetch_line(obj, na);  
-            }
             /*keep line status, check if ID is valid*/
             obj->line_status=obj->buffer[0];
+
+            //In case of F you just ignore this line.
+            if(obj->buffer[0]=='F'){
+                return true;
+            }
     
             /*Replace \n and _ with NULL*/
             int i=0;
@@ -184,13 +163,11 @@ bool lm_fetch_line(line_manager* obj, TopK* top, result_manager* rm){
             }
             if(strcmp(&obj->buffer[2], "DYNAMIC\n")==0){
                 obj->file_status='D';
-                return lm_fetch_line(obj, top, rm);
-                //return lm_fetch_line(obj, na);  
+                return lm_fetch_line(obj); 
             }
             else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
                 obj->file_status='S';
-                return lm_fetch_line(obj, top, rm);
-                //return lm_fetch_line(obj, na);  
+                return lm_fetch_line(obj);
             }
             //printf("line %s", obj->buffer);
         }
@@ -281,41 +258,31 @@ char* lm_fetch_word(line_manager* obj){
 
 /*Initialise and deallocate Memory*/
 
-void result_manager_init(result_manager* obj,FILE *fp){
+void result_init(result* obj,FILE *fp){
     obj->output=fp;
     obj->output_buffer=(char*)malloc(sizeof(char)*INIT_SIZE_BUF);
     if(obj->output_buffer==NULL){
-        fprintf(stderr,"Malloc failed :: result_manager_init\n");
+        fprintf(stderr,"Malloc failed :: result_init\n");
         exit(-1);
     }
     obj->output_bufsize=INIT_SIZE_BUF;
-    obj->first_available_slot=-1;
+    obj->first_available_slot=0;
     obj->buffer_start=0;
 }
 
-void result_manager_fin(result_manager* obj){
+void result_fin(result* obj){
     if(obj->output_buffer!=NULL){
         free(obj->output_buffer);
     }
     return;
 }
 
-/*Initialise first_available_slot of output buffer*/
-void rm_start(result_manager *obj){
-    /*a new new ngram starts*/
-    obj->first_available_slot=obj->buffer_start;
-    return;
-}
-
 /*Αdd word_count of the words of line manager(current_ngram) to output buffer plus one |*/
 //Use of hash and array
-void rm_ngram_detected(result_manager* obj, TopK* top, line_manager *lm, int word_count){
-//only array
-//void rm_ngram_detected(result_manager* obj, ngram_array* na){
-    //int i=0;
+void rm_ngram_detected(result* obj, line *l, int word_count){
     int current_index=0;
     char* p_ngram;
-    p_ngram=&lm->buffer[lm->n_gram_position];
+    p_ngram=&l->buffer[l->n_gram_position];
     current_index=obj->first_available_slot;
     while(word_count>0){
         if(obj->first_available_slot==obj->output_bufsize){
@@ -340,33 +307,24 @@ void rm_ngram_detected(result_manager* obj, TopK* top, line_manager *lm, int wor
         }
         obj->first_available_slot++;
     }
-    obj->output_buffer[obj->first_available_slot-1]='\0';
-    int len=0;
-    len=obj->first_available_slot-current_index;
-    //insert to hash
-    Hash_insert(top->Hash, &obj->output_buffer[current_index], len);
-    //lookup and insert to array
-    //na_lookup(na, &obj->output_buffer[current_index], len);
-    /*clean word buffer*/
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
 }
 
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
-void rm_completed(result_manager* obj){
-    if(obj->first_available_slot==obj->buffer_start){ //no ngram detected
+void rm_completed(result* obj){
+    if(obj->first_available_slot==0){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
         obj->first_available_slot=obj->first_available_slot+3;
     }    
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
     }
-    obj->buffer_start=obj->first_available_slot;
+    obj->first_available_slot=0;
 }
 
 /*Print result of gust*/
-void rm_display_result(result_manager* obj){
+void rm_display_result(result* obj){
     obj->output_buffer[obj->first_available_slot]='\0';
     fprintf(obj->output,"%s",obj->output_buffer);
-    obj->buffer_start=0;
     obj->first_available_slot=0;
 }
