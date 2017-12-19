@@ -64,8 +64,8 @@ void tn_fin(trie_node* obj);
 //Queries functions
 trie_node* tn_lookup(trie_node* obj,char* input_word);
 trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word);
-void tn_set_final(trie_node* obj,unsigned int add_version);
-void tn_unset_final(trie_node* obj,unsigned int del_version);
+void tn_set_final(trie_node* obj);
+void tn_unset_final(trie_node* obj);
 bool tn_has_fork(trie_node* obj);
 bool tn_has_child(trie_node* obj);
 

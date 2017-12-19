@@ -2,73 +2,73 @@
 #include <stdlib.h>
 #include <string.h>
 
-void trie_init(trie* obj,int init_child_arr_size){
+void trie_init(trie* obj,int threads,pthread_t *tids,int init_child_arr_size){
     if(init_child_arr_size < 1){
         fprintf(stderr,"Trie init called with wrong init child arr size\n");
         exit(-1);
     }
+    //offset for virtual pointer
     trie_node* pt;
-    //fprintf(stderr,"obj on %p, ca on %p\n",pt,&pt->next);
     obj->offset = (size_t)&pt->next -(size_t)pt;
-    //fprintf(stderr,"obj on %p, ca on %p\n",pt,(void*)pt+obj->offset);
-
     obj->ca_init_size = init_child_arr_size;
     obj->dynamic = true;
     obj->version=0;
     hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
-    #if WHICH_FILTER == 2
-    filter_init(&obj->detected_nodes,FILTER_INIT_SIZE);
-    obj->reuse_filter = (void*)&f_reuse;
-    obj->ngram_unique = (void*)&f_append;
-    #elif WHICH_FILTER == 1
-    pointer_set_init(&obj->detected_nodes,FILTER_INIT_SIZE);
-    obj->reuse_filter = (void*)&ps_reuse;
-    obj->ngram_unique = (void*)&ps_append;
-    #else
-    hash_pset_init(&obj->detected_nodes,FILTER_INIT_SIZE);
-    obj->reuse_filter = (void*)&hash_pset_reuse;
-    obj->ngram_unique = (void*)&hash_pset_append;
-    #endif
+    filter_manager_init(&obj->fm,threads,tids);
 }
 
 void trie_fin(trie* obj){
     hashtable_fin(&obj->zero_level);
-    #if WHICH_FILTER == 2
-    filter_fin(&obj->detected_nodes);
-    #elif WHICH_FILTER == 1
-    pointer_set_fin(&obj->detected_nodes);
-    #else
-    hash_pset_fin(&obj->detected_nodes);
-    #endif
+    filter_manager_fin(&obj->fm);
 }
 
-
-void trie_insert(trie* obj,line_manager* lm){
+void trie_insert(trie* obj,line* lm){
     if(obj->dynamic==false){
         fprintf(stderr,"Insert on static trie is not available");
         return;
     }
-    char* current_word = lm_fetch_word(lm);
+    char* current_word = line_fetch_word(lm);
     if(current_word==NULL) return;
     trie_node* current_node = hashtable_insert(&obj->zero_level,current_word);
     /*if(current_node==NULL){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
         exit(-1);
     }*/
-    current_word = lm_fetch_word(lm);
+    current_word = line_fetch_word(lm);
     while(current_word!=NULL){
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
-        current_word = lm_fetch_word(lm);
+        current_word = line_fetch_word(lm);
     }
-    tn_set_final(current_node,obj->version);
+    tn_set_final(current_node);
 }
 
-bool trie_delete(trie* obj,line_manager* lm){
+bool trie_mark_deleted(trie* obj,line* l,int version){
+    if(obj->dynamic==false){
+        fprintf(stderr,"Delete on static trie is not available");
+        return;
+    }
+    loc_res current_node;
+    //current_node.found=false;
+    char* current_word = line_fetch_word(lm);
+    if(current_word==NULL) return false;
+    int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
+    //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
+    current_node.node_ptr = (void*)&obj->zero_level.ca_bucket[target_bucket] - obj->offset;
+    
+    while(current_word!=NULL){
+        current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
+        if(current_node.found==false) return false;
+        current_word = line_fetch_word(lm);
+    }
+    current_node.node_ptr->timestamp.deleted = version;
+}
+
+bool trie_delete(trie* obj,line* lm){
     if(obj->dynamic==false){
         fprintf(stderr,"Delete on static trie is not available");
         return false;
     }
-    char* current_word = lm_fetch_word(lm);
+    char* current_word = line_fetch_word(lm);
     if(current_word==NULL){
         return false;
     }
@@ -101,11 +101,11 @@ bool trie_delete(trie* obj,line_manager* lm){
             last_fork = &current.node_ptr->next;
             get_critical_index=true;
         }
-        current_word = lm_fetch_word(lm);
+        current_word = line_fetch_word(lm);
     }
 
     if(tn_has_child(current.node_ptr)==true){
-        tn_unset_final(current.node_ptr,obj->version);
+        tn_unset_final(current.node_ptr);
     }
     else{
         //deletes entire path from last_fork to leaf
@@ -114,15 +114,14 @@ bool trie_delete(trie* obj,line_manager* lm){
     return true;
 }
 
-clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager* rm, TopK* top){
-//clock_t trie_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+clock_t trie_search(trie* obj,int version,line* lm,result* rm, TopK* top){
     clock_t start = clock();
-    rm_start(rm);
-    obj->reuse_filter(&obj->detected_nodes);
+    bool (*ngram_unique)(void* obj,void* input);
+    abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
 
-    while(lm_fetch_ngram(lm)){
-        char* current_word = lm_fetch_word(lm);
+    while(line_fetch_ngram(lm)){
+        char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
         //Search first word in hash table
@@ -140,8 +139,8 @@ clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager* rm, T
                 //Version check
                 //if(current_node.node_ptr->version.added > version) break;
                 //if(current_node.node_ptr->version.deleted <= version) break;
-                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    rm_ngram_detected(rm, top, lm, words_found);
+                if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
+                    result_ngram_detected(rm, lm, words_found);
                 }
             }
             //get next word
@@ -149,21 +148,19 @@ clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager* rm, T
             while(*current_word=='\0') current_word++;
         }
     }
-    rm_completed(rm);
+    result_completed(rm);
     return clock() - start;
 }
 
 #if HYPER_NODE_OPT == 1
-clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
-//clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
     clock_t start = clock();
-    rm_start(rm);
-    obj->reuse_filter(&obj->detected_nodes);
+    bool (*ngram_unique)(void* obj,void* input);
+    abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
 
-    while(lm_fetch_ngram(lm)){
-        //rm_new_ngram(rm);
-        char* current_word = lm_fetch_word(lm);
+    while(line_fetch_ngram(lm)){
+        char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
 
@@ -178,8 +175,8 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
             if(current_node.node_ptr==NULL) break;
             words_found++;
             if(current_node.node_ptr->final==true){
-                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    rm_ngram_detected(rm, top, lm, words_found);
+                if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
+                    result_ngram_detected(rm, lm, words_found);
                 }
             }
             current_word += current_node.string_length+1;
@@ -203,8 +200,8 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
                     //get final info bit
                     buf1++;
                     if(*buf1==true){
-                        if(obj->ngram_unique(&obj->detected_nodes,buf1)){
-                            rm_ngram_detected(rm, top, lm, words_found);
+                        if(ngram_unique(detected_nodes,buf1)){
+                            result_ngram_detected(rm, lm, words_found);
                         }
                     }
                     //set buffers at next word
@@ -217,20 +214,18 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
             }
         }
     }
-    rm_completed(rm);
+    result_completed(rm);
     return clock() - start;
 }
 #else
-clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top){
-//clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na){
+clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
     clock_t start = clock();
-    rm_start(rm);
-    obj->reuse_filter(&obj->detected_nodes);
+    bool (*ngram_unique)(void* obj,void* input);
+    abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
 
-    while(lm_fetch_ngram(lm)){
-        //rm_new_ngram(rm);
-        char* current_word = lm_fetch_word(lm);
+    while(line_fetch_ngram(lm)){
+        char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
 
@@ -245,8 +240,8 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
             if(current_node.node_ptr==NULL) break;
             words_found++;
             if(current_node.node_ptr->final==true){
-                if(obj->ngram_unique(&obj->detected_nodes,current_node.node_ptr)==true){
-                    rm_ngram_detected(rm, top, lm, words_found);
+                if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
+                    result_ngram_detected(rm, lm, words_found);
                 }
             }
             current_word += current_node.string_length+1;
@@ -280,8 +275,8 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
                     //Words are the same
                     words_found++;
                     if(final==true){
-                        if(obj->ngram_unique(&obj->detected_nodes,buf1)){
-                            rm_ngram_detected(rm, top, lm, words_found);
+                        if(ngram_unique(detected_nodes,buf1)){
+                            result_ngram_detected(rm, lm, words_found);
                         }
                     }
                     //set buffers at next word
@@ -293,7 +288,7 @@ clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* 
             }
         }
     }
-    rm_completed(rm);
+    result_completed(rm);
     return clock() - start;
 }
 #endif
