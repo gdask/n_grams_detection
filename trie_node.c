@@ -98,26 +98,30 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     if(tn_is_leaf(obj)==true){
         tn_leaf_to_normal(obj,init_child_size);
         ca_force_append(&obj->next,input_word,0);
+        obj->next.Array[0].version.added = 0;
+        obj->next.Array[0].version.deleted = -1;
         return &obj->next.Array[0];
     }
     //Search in children
     loc_res result = ca_locate_bin(&obj->next,input_word);
     if(result.node_ptr!=NULL){
+        //IS THIS USEFUL?
+        result.node_ptr->version.deleted = -1;
         return result.node_ptr;
     }
     else{
         ca_force_append(&obj->next,input_word,result.index);
+        obj->next.Array[result.index].version.added = 0;
+        obj->next.Array[result.index].version.deleted = -1;
         return &obj->next.Array[result.index];
     }
 }
 
-void tn_set_final(trie_node* obj,unsigned int add_version){
-    obj->version.added=add_version;
+void tn_set_final(trie_node* obj){
     obj->final=true;
 }
 
-void tn_unset_final(trie_node* obj,unsigned int del_version){
-    obj->version.deleted=del_version;
+void tn_unset_final(trie_node* obj){
     obj->final=false;
 }
 

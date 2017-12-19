@@ -4,14 +4,9 @@
 #include "hashtable.h"
 #include "trie_node.h"
 #include "string_utils.h"
-#include "filters/bloom_filter.h"
-#include "filters/pointer_set.h"
-#include "filters/hash_pointer_set.h"
+#include "filters/filter_manager.h"
 #include <time.h>
-
-
-#define WHICH_FILTER 0 // 2 for bloom, 1 for pointer set, 0 for hash pointer set 
-#define FILTER_INIT_SIZE 500
+#include <pthread.h>
 
 struct trie{
     unsigned int version;
@@ -19,33 +14,25 @@ struct trie{
     int ca_init_size;
     hashtable zero_level;
     size_t offset;
-    #if WHICH_FILTER==2
-    filter detected_nodes;
-    #elif WHICH_FILTER==1
-    pointer_set detected_nodes;
-    #else
-    hash_pset detected_nodes;
-    #endif
-    //pointers to filter(bloom or pointer_set) functions,because function overloading is not an option in c!
-    void (*reuse_filter)(void* obj);
-    bool (*ngram_unique)(void* obj,void* input);
+    filter_manager fm;
 };
 typedef struct trie trie;
 
-void trie_init(trie* obj,int init_child_arr_size);
+//Those functions are not thread safe.
+void trie_init(trie* obj,int threads,pthread_t *tids,int init_child_arr_size);
 void trie_fin(trie* obj);
-void trie_insert(trie* obj,line_manager* lm);
-//clock_t trie_search(trie* obj,line_manager* lm,result_manager *rm, ngram_array* na);
-//clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na);
-clock_t trie_search(trie* obj,int version,line_manager* lm,result_manager *rm, TopK* top);
-clock_t trie_static_search(trie* obj,line_manager* lm,result_manager* rm, TopK* top);
-//void trie_hyper_search(trie* obj,line_manager* lm,result_manager* rm, ngram_array* na,hyper_node* current);
-bool trie_delete(trie* obj,line_manager* lm);
-//Deleted node pointers stays waiting this function until are permantly removed from trie.
-void trie_remove_deleted_nodes(trie* obj);
+void trie_insert(trie* obj,line* l,int version);
+//changes the timestamp of the proper nodes on the trie. Use for burst preparation
+bool trie_mark_deleted(trie* obj,line* l,int version);
+//makes the actual deletion from the trie. Use at the end of burst
+bool trie_delete(trie* obj,line* l);
 //Version ++
 void trie_update_version(trie* obj);
+//Transform dynamic trie to static for faster queries.
 void trie_compress(trie* obj);
+//Those functions are thread safe
+clock_t trie_search(trie* obj,line* l,result *r, TopK* top,int version);
+clock_t trie_static_search(trie* obj,line* l,result* r, TopK* top);
 
 
 
