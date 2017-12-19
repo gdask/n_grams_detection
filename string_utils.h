@@ -2,6 +2,7 @@
 #define	STRING_UTILS_H
 
 #define INIT_SIZE_BUF 512
+#define NUMBER_OF_LINES 28
 #include <stdbool.h>
 #include <stdio.h>
 //#include "./topk/topk.h"
@@ -16,13 +17,15 @@ typedef struct line{
     int n_gram_position;
     int word_position;
     int line_end; //where \n found
+    int k; //for case F_3
 }line;
 
 typedef struct line_manager{
     FILE *input;
     char file_status;// static(S) or dynamic(D)
     char lm_status; //lm_status is for init file or query
-    int bufsize;
+    int first_available_slot;
+    int number_of_lines;
     line* line; //lines of batch
 }line_manager;
 
@@ -48,7 +51,7 @@ void line_fin(line* obj);
 //prepare line for other functions
 void line_parse(line* obj);
 //check ig line fetch ngram can return char* at first word of ngram
-bool line_fetch_ngram(line* obj);
+char* line_fetch_ngram(line* obj);
 char* line_fetch_word(line* obj);
 
 bool line_is_query(line* obj);
