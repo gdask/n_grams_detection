@@ -12,7 +12,8 @@ void trie_init(trie* obj,int threads,pthread_t *tids,int init_child_arr_size){
     obj->offset = (size_t)&pt->next -(size_t)pt;
     obj->ca_init_size = init_child_arr_size;
     obj->dynamic = true;
-    obj->version=0;
+    obj->trie_search = &trie_search_dynamic;
+    //obj->version=0;
     hashtable_init(&obj->zero_level, HASH_BUCKETS_INIT, init_child_arr_size);
     filter_manager_init(&obj->fm,threads,tids);
 }
@@ -21,8 +22,9 @@ void trie_fin(trie* obj){
     hashtable_fin(&obj->zero_level);
     filter_manager_fin(&obj->fm);
 }
-
-void trie_insert(trie* obj,line* lm){
+/*Trie insert updates version info instead of trie_node insert
+That could cause false results in case we insert the same ngram twice*/
+void trie_insert(trie* obj,line* lm,unsigned int version){
     if(obj->dynamic==false){
         fprintf(stderr,"Insert on static trie is not available");
         return;
@@ -34,22 +36,26 @@ void trie_insert(trie* obj,line* lm){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
         exit(-1);
     }*/
+    current_node->version.added = version;
+    current_node->version.deleted = -1;
     current_word = line_fetch_word(lm);
     while(current_word!=NULL){
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         current_word = line_fetch_word(lm);
+        current_node->version.added = version;
+        current_node->version.deleted = -1;
     }
     tn_set_final(current_node);
 }
 
-bool trie_mark_deleted(trie* obj,line* l,int version){
+bool trie_mark_deleted(trie* obj,line* l,unsigned int version){
     if(obj->dynamic==false){
         fprintf(stderr,"Delete on static trie is not available");
-        return;
+        return false;
     }
     loc_res current_node;
     //current_node.found=false;
-    char* current_word = line_fetch_word(lm);
+    char* current_word = line_fetch_word(l);
     if(current_word==NULL) return false;
     int target_bucket = hash_get_bucket(&obj->zero_level,current_word);
     //Pointer at 'virtual' trie node that has same children as target_bucket on hashtable.
@@ -57,10 +63,11 @@ bool trie_mark_deleted(trie* obj,line* l,int version){
     
     while(current_word!=NULL){
         current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
-        if(current_node.found==false) return false;
-        current_word = line_fetch_word(lm);
+        if(current_node.node_ptr==NULL) return false;
+        current_word = line_fetch_word(l);
     }
-    current_node.node_ptr->timestamp.deleted = version;
+    current_node.node_ptr->version.deleted = version;
+    return true;
 }
 
 bool trie_delete(trie* obj,line* lm){
@@ -114,8 +121,7 @@ bool trie_delete(trie* obj,line* lm){
     return true;
 }
 
-clock_t trie_search(trie* obj,int version,line* lm,result* rm, TopK* top){
-    clock_t start = clock();
+void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -140,7 +146,7 @@ clock_t trie_search(trie* obj,int version,line* lm,result* rm, TopK* top){
                 //if(current_node.node_ptr->version.added > version) break;
                 //if(current_node.node_ptr->version.deleted <= version) break;
                 if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
-                    result_ngram_detected(rm, lm, words_found);
+                    result_ngram_detected(rm,lm,words_found);
                 }
             }
             //get next word
@@ -149,12 +155,10 @@ clock_t trie_search(trie* obj,int version,line* lm,result* rm, TopK* top){
         }
     }
     result_completed(rm);
-    return clock() - start;
+    return;
 }
-
 #if HYPER_NODE_OPT == 1
-clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
-    clock_t start = clock();
+void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -215,10 +219,10 @@ clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
         }
     }
     result_completed(rm);
-    return clock() - start;
+    return;
 }
 #else
-clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
+void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
     clock_t start = clock();
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
@@ -289,7 +293,7 @@ clock_t trie_static_search(trie* obj,line* lm,result* rm, TopK* top){
         }
     }
     result_completed(rm);
-    return clock() - start;
+    return;
 }
 #endif
 
@@ -310,4 +314,5 @@ void trie_compress(trie* obj){
     for(i=0;i<obj->zero_level.size;i++){
         ca_compress(&obj->zero_level.ca_bucket[i],0);
     }
+    obj->trie_search = &trie_search_static;
 }
