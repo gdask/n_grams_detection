@@ -414,8 +414,12 @@ void rm_ngram_detected(result* obj, line *l, int word_count){
     obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
 }
 
+void result_ngram_detected(result* obj, line *l, int word_count){
+
+}
+
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
-void rm_completed(result* obj){
+void result_completed(result* obj){
     if(obj->first_available_slot==0){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
         obj->first_available_slot=obj->first_available_slot+3;
@@ -427,8 +431,25 @@ void rm_completed(result* obj){
 }
 
 /*Print result of gust*/
-void rm_display_result(result* obj){
-    obj->output_buffer[obj->first_available_slot]='\0';
+//-rm display result has to print all the results that has been used from result manager
+void rm_display_result(result_manager* obj){
+    /*obj->output_buffer[obj->first_available_slot]='\0';
     fprintf(obj->output,"%s",obj->output_buffer);
-    obj->first_available_slot=0;
+    obj->first_available_slot=0;*/
+}
+
+void rm_init(result_manager* obj){
+
+}
+
+void rm_fin(result_manager* obj){
+
+}
+
+void rm_use_topk(result_manager* obj, int k){
+
+}
+
+result* rm_get_result(result_manager* obj){
+
 }

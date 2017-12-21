@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void job_scheduler_init(job_scheduler* obj,int num_of_threads){
+pthread_t* job_scheduler_init(job_scheduler* obj,int num_of_threads){
     obj->threads = num_of_threads;
     obj->tids = malloc(num_of_threads*sizeof(pthread_t));
     obj->job_arr_size = INIT_ARR_SIZE;
@@ -21,6 +21,7 @@ void job_scheduler_init(job_scheduler* obj,int num_of_threads){
     pthread_cond_init(&obj->job_done,NULL);
     int i;
     for(i=0;i<obj->threads;i++) pthread_create(&obj->tids[i],0,worker,obj);
+    return obj->tids;
 }
 
 void job_scheduler_fin(job_scheduler* obj){

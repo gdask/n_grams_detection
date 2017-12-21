@@ -1,5 +1,7 @@
 #include <stdio.h>
-#include "../jobscheduler.h"
+#include "jobscheduler.h"
+
+//SET DEBUG SCHEDULER = 1
 
 int main(){
     job_scheduler test;

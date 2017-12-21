@@ -4,16 +4,16 @@
 #include <time.h>
 #include "string_utils.h"
 #include "trie.h"
-#include "hashtable.h"
+#include "./job_scheduler/jobscheduler.h"
+#include <pthread.h>
 
 int main(int argc,char* argv[]){
+    //Argument checking
     if(argc!=5){
         fprintf(stderr,"Essential arguments -i 'init filename' -q 'query filename'\n");
         exit(-1);
     }
-
-    FILE *query_file,*result_file,*init_file;
-    result_file = stdout;
+    FILE *query_file,*init_file;
     if(strcmp(argv[1],"-i")==0 && strcmp(argv[3],"-q")==0){
         init_file = fopen(argv[2],"r");
         query_file = fopen(argv[4],"r");
@@ -26,7 +26,6 @@ int main(int argc,char* argv[]){
         fprintf(stderr,"Essential arguments -i 'init filename' -q 'query filename'\n");
         exit(-1);
     }
-
     if(init_file==NULL){
         perror("Init File: ");
         exit(-1);
@@ -35,101 +34,74 @@ int main(int argc,char* argv[]){
         perror("Query File: ");
         exit(-1);
     }
-
-    /*char* inbuf=malloc(sizeof(char)*10000000);
-    setvbuf(query_file, inbuf, _IOFBF, 10000000);*/
-
     clock_t start,end;
-    clock_t queries=0;
     start = clock();
 
+    //FIRST CREATE JOB SCHEDULER
+    int threads = 4;
+    job_scheduler js;
+    pthread_t *thread_ids=job_scheduler_init(&js,threads);
+    //THEN CREATE TRIE
     trie db;
-    trie_init(&db,4);
+    trie_init(&db,threads,thread_ids,4);
 
-    //Ngrams array
-    //ngram_array na;
-    //na_init(&na);
-
-    //Hash and ngram array
-    TopK t;
-    Hash_init(t.Hash);
-
-    bool has_line;
-    //INIT FILE
+    //Init trie from init file
     line_manager lm_init;
-    result_manager rm;
-    result_manager_init(&rm,result_file);
-    line_manager_init(&lm_init,init_file, 'I');
-    has_line = lm_fetch_line(&lm_init, &t, &rm); 
-    //has_line = lm_fetch_line(&lm_init, &na);    
-
-    while(has_line==true){
-        lm_fetch_ngram(&lm_init);
-        trie_insert(&db,&lm_init);
-        has_line= lm_fetch_line(&lm_init, &t, &rm);
-        //has_line= lm_fetch_line(&lm_init, &na);
+    line_manager_init(&lm_init,init_file,'I');
+    line* current_line = lm_fetch_sequence_line(&lm_init);
+    while(current_line!=NULL){
+        trie_insert(&db,current_line,0);
+        current_line = lm_fetch_sequence_line(&lm_init);
     }
-
-    if(lm_init.file_status=='S'){ //Static files only
-        fprintf(stderr,"Static\n");
-        trie_compress(&db);
-    }
-    //hash_print(&db.zero_level);
-    //return 0;
-    char status = lm_init.file_status;
+    char trie_status = lm_get_file_status(&lm_init);
+    //compress trie if needed
+    if(trie_status=='S')trie_compress(&db);
+    if(trie_status=='S')fprintf(stderr,"Static\n");
     line_manager_fin(&lm_init);
-    end = clock();
-    //fprintf(stderr,"Init & compress time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
-
-
-    line_manager lm;
-    line_manager_init(&lm,query_file,'Q');
-
-    //QUERY FILE
-    if(status=='S'){
-        has_line=lm_fetch_line(&lm, &t, &rm);
-        //has_line=lm_fetch_line(&lm, &na);
-        while(has_line==true){
-            // /queries+=trie_static_search(&db,&lm,&rm, &na);
-            queries+=trie_static_search(&db,&lm,&rm, &t);
-            has_line=lm_fetch_line(&lm, &t, &rm);
-            //has_line=lm_fetch_line(&lm, &na);
-        }
-    }
-    else{
-        has_line=lm_fetch_line(&lm, &t, &rm);
-        //has_line=lm_fetch_line(&lm, &na);
-        while(has_line==true){
-            if(lm_is_insert(&lm)==true){
-                lm_fetch_ngram(&lm);
-                trie_insert(&db,&lm);
-            }
-            else if(lm_is_delete(&lm)==true){
-                lm_fetch_ngram(&lm);
-                trie_delete(&db,&lm);
-            }
-            else if(lm_is_query(&lm)==true){
-                //queries+=trie_search(&db,&lm,&rm, &na);
-                queries+=trie_search(&db,0,&lm,&rm, &t);
-            }
-            else{
-                fprintf(stderr,"Corrupted line\n");
-            }
-            has_line=lm_fetch_line(&lm, &t, &rm);
-            //has_line=lm_fetch_line(&lm, &na);
-        }
-    }
-
-    fprintf(stderr,"Queries time:%f\n",((float)queries)/CLOCKS_PER_SEC);
-
-    line_manager_fin(&lm);
-    result_manager_fin(&rm);
-    Hash_fin(t.Hash);
-    //na_fin(&na);
-    fclose(query_file);
-    //fclose(result_file);
     fclose(init_file);
+    //return 0;
+
+    //Execute batches
+    line_manager queries;
+    result_manager results;
+    line_manager_init(&queries,query_file,'Q');
+    rm_init(&results);
+    Job task;
+    task.arg1 = &db;
+    task.version = 1;
+    current_line = lm_fetch_sequence_line(&queries);
+    while(current_line!=NULL){
+        if(line_is_query(current_line)){
+            task.arg2 = current_line;
+            task.arg3 = rm_get_result(&results);
+            js_submit_job(&js,task);
+            current_line = lm_fetch_independent_line(&queries);
+        }
+        else if(line_is_insert(current_line)){
+            task.version++;
+            trie_insert(&db,current_line,task.version);
+            current_line = lm_fetch_sequence_line(&queries);
+        }
+        else if(line_is_delete(current_line)){
+            task.version++;
+            trie_mark_deleted(&db,current_line,task.version);
+            current_line = lm_fetch_independent_line(&queries);
+        }
+        else if(line_is_F(current_line)){
+            rm_use_topk(&results,current_line->k);
+            js_execute_jobs(&js);
+            rm_display_result(&results);
+            //now we have to make actual deletions in trie
+            //make sure that every resource is ready for the next batch
+            current_line = lm_fetch_sequence_line(&queries);
+        }
+    }
+
+    line_manager_fin(&queries);
+    rm_fin(&results);
+    fclose(query_file);
     trie_fin(&db);
+    job_scheduler_fin(&js);
 
     end=clock();
     fprintf(stderr,"Elapsed time:%f\n",((float)end-start)/CLOCKS_PER_SEC);

@@ -1,5 +1,6 @@
 #include "filter_manager.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void filter_manager_init(filter_manager* obj,int threads,pthread_t* thread_ids){
     obj->number_of_threads=threads;
@@ -47,7 +48,7 @@ void filter_manager_fin(filter_manager* obj){
 
 abstract_filter* get_filter(filter_manager* obj,void** unique_func_ptr){
     *unique_func_ptr = obj->ngram_unique;
-    int thread_id; //Init with the proper function
+    int thread_id = pthread_self();
     int i;
     for(i=0;i<obj->number_of_threads;i++){ //finds the right filter
         if(pthread_equal(thread_id,obj->t_ids[i])!=0){

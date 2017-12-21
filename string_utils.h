@@ -79,7 +79,7 @@ line* lm_fetch_independent_line(line_manager* obj);
 void result_init(result* obj,FILE *fp); //Initilize struct
 void result_fin(result* obj); //Deallocates any malloced memory
 // "|hello world [new words]" is appended at the result
-void result_ngram_detected(result* obj, line_manager *lm, int word_count);
+void result_ngram_detected(result* obj, line *l, int word_count);
 //writes the result, handles no result
 void result_completed(result* obj);
 
@@ -89,8 +89,9 @@ void rm_fin(result_manager* obj);
 //Topk structure should be used
 void rm_use_topk(result_manager* obj, int k);
 //display result of each query
-void rm_display_result(result* obj);
+//- also prepares result manager for the next batch
+void rm_display_result(result_manager* obj);
 //return space where result of each query can be written
-result* get_result(result_manager* obj);
+result* rm_get_result(result_manager* obj);
 
 #endif
