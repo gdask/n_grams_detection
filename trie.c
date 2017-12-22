@@ -25,6 +25,7 @@ void trie_fin(trie* obj){
 /*Trie insert updates version info instead of trie_node insert
 That could cause false results in case we insert the same ngram twice*/
 void trie_insert(trie* obj,line* lm,unsigned int version){
+    line_fetch_ngram(lm);
     if(obj->dynamic==false){
         fprintf(stderr,"Insert on static trie is not available");
         return;
@@ -53,6 +54,7 @@ bool trie_mark_deleted(trie* obj,line* l,unsigned int version){
         fprintf(stderr,"Delete on static trie is not available");
         return false;
     }
+    line_fetch_ngram(l);
     loc_res current_node;
     //current_node.found=false;
     char* current_word = line_fetch_word(l);
@@ -75,6 +77,7 @@ bool trie_delete(trie* obj,line* lm){
         fprintf(stderr,"Delete on static trie is not available");
         return false;
     }
+    line_fetch_ngram(lm);
     char* current_word = line_fetch_word(lm);
     if(current_word==NULL){
         return false;
@@ -122,12 +125,14 @@ bool trie_delete(trie* obj,line* lm){
 }
 
 void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
+    line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
+    char* current_word;
 
-    while(line_fetch_ngram(lm)){
-        char* current_word = line_fetch_word(lm);
+    while((current_word=line_fetch_ngram(lm))!=NULL){
+        //char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
         //Search first word in hash table
@@ -162,9 +167,10 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
+    char* current_word;
 
-    while(line_fetch_ngram(lm)){
-        char* current_word = line_fetch_word(lm);
+    while((current_word=line_fetch_ngram(lm))!=NULL){
+        //char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
 
@@ -227,8 +233,9 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
+    char* current_word;
 
-    while(line_fetch_ngram(lm)){
+    while((current_word=line_fetch_ngram(lm))!=NULL){
         char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
