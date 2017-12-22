@@ -252,7 +252,7 @@ int Iline_fetch(line* obj, FILE* input){
         else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
             return 3;
         }
-        //printf("line %s", obj->buffer);
+        printf("line %s", obj->buffer);
     }
     else{ // EOF is found, my work here is done
         return -1;
@@ -306,7 +306,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
             retval=Iline_fetch(&obj->line[pos], obj->input);
         }
         if(retval==3){
-            obj->file_status='D';
+            obj->file_status='S';
             retval=Iline_fetch(&obj->line[pos], obj->input);
         }
         if(retval==0){
@@ -355,7 +355,7 @@ line* lm_fetch_independent_line(line_manager* obj){
             retval=Iline_fetch(&obj->line[pos], obj->input);
         }
         if(retval==3){
-            obj->file_status='D';
+            obj->file_status='S';
             retval=Iline_fetch(&obj->line[pos], obj->input);
         }
         if(retval==0){    
