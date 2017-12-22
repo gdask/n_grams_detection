@@ -51,7 +51,6 @@ Initialise word_position, word_start*/
 char* line_fetch_ngram(line* obj){
     int i;
     i=obj->n_gram_position;
-    //printf("i=%d end=%d", i, obj->line_end);
     /*looks after id code*/
     while(obj->buffer[i]!='\0'){
         i++;
@@ -213,7 +212,7 @@ int Qline_fetch(line* obj, FILE* fp){
                 obj->k=ret;
                 obj->buffer[i]='\n'; //because of line_parse()
             }
-            return 1;
+            return 0;
         }
     } 
     else{
@@ -292,9 +291,11 @@ line* lm_fetch_sequence_line(line_manager* obj){
         retval=Qline_fetch(&obj->line[pos], obj->input);
         if(retval==0){
             obj->first_available_slot++;
+            if(line_is_query(&obj->line[pos])!=true){
+                line_parse(&obj->line[pos]);
+            }
             return &obj->line[pos];
         }
-        else if(retval==1) return &obj->line[pos]; //HOW DO I HANDLE F???
         else return 0;
     }
     //For files .init
@@ -310,6 +311,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
         }
         if(retval==0){
             obj->first_available_slot++;
+            line_parse(&obj->line[pos]);
             return &obj->line[pos];
         }
         else return 0;
@@ -338,8 +340,12 @@ line* lm_fetch_independent_line(line_manager* obj){
     int retval=0;
     if(obj->lm_status=='Q'){
         retval=Qline_fetch(&obj->line[pos], obj->input);
-        if(retval==0) return &obj->line[pos];
-        else if(retval==1) return &obj->line[pos]; //HOW DO I HANDLE F???
+        if(retval==0){
+            if(line_is_query(&obj->line[pos])!=true){
+                line_parse(&obj->line[pos]);
+            }
+            return &obj->line[pos];
+        }
         else return 0;
     }
     else if(obj->lm_status=='I'){
@@ -352,7 +358,10 @@ line* lm_fetch_independent_line(line_manager* obj){
             obj->file_status='D';
             retval=Iline_fetch(&obj->line[pos], obj->input);
         }
-        if(retval==0) return &obj->line[pos];
+        if(retval==0){    
+            line_parse(&obj->line[pos]);
+            return &obj->line[pos];
+        }
         else return 0;
     }
     return 0;   
@@ -362,8 +371,7 @@ line* lm_fetch_independent_line(line_manager* obj){
 
 /*Initialise and deallocate Memory*/
 
-void result_init(result* obj,FILE *fp){
-    obj->output=fp;
+void result_init(result* obj){
     obj->output_buffer=(char*)malloc(sizeof(char)*INIT_SIZE_BUF);
     if(obj->output_buffer==NULL){
         fprintf(stderr,"Malloc failed :: result_init\n");
@@ -371,7 +379,7 @@ void result_init(result* obj,FILE *fp){
     }
     obj->output_bufsize=INIT_SIZE_BUF;
     obj->first_available_slot=0;
-    obj->buffer_start=0;
+    obj->start_ngram=0;
 }
 
 void result_fin(result* obj){
@@ -382,12 +390,9 @@ void result_fin(result* obj){
 }
 
 /*Αdd word_count of the words of line manager(current_ngram) to output buffer plus one |*/
-//Use of hash and array
-void rm_ngram_detected(result* obj, line *l, int word_count){
-    int current_index=0;
+void result_ngram_detected(result* obj, line *l, int word_count){
     char* p_ngram;
     p_ngram=&l->buffer[l->n_gram_position];
-    current_index=obj->first_available_slot;
     while(word_count>0){
         if(obj->first_available_slot==obj->output_bufsize){
             char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
@@ -411,18 +416,14 @@ void rm_ngram_detected(result* obj, line *l, int word_count){
         }
         obj->first_available_slot++;
     }
-    obj->output_buffer[obj->first_available_slot-1]='|'; //last thing shouldn't be space but |
+    obj->output_buffer[obj->first_available_slot-1]='\0'; //last thing shouldn't be space but |
 }
 
-void result_ngram_detected(result* obj, line *l, int word_count){
-
-}
 
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
 void result_completed(result* obj){
     if(obj->first_available_slot==0){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
-        obj->first_available_slot=obj->first_available_slot+3;
     }    
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
@@ -430,26 +431,111 @@ void result_completed(result* obj){
     obj->first_available_slot=0;
 }
 
-/*Print result of gust*/
-//-rm display result has to print all the results that has been used from result manager
-void rm_display_result(result_manager* obj){
-    /*obj->output_buffer[obj->first_available_slot]='\0';
-    fprintf(obj->output,"%s",obj->output_buffer);
-    obj->first_available_slot=0;*/
+char* result_fetch_ngram(result* obj){
+    int i;
+    for(i=obj->start_ngram; i<obj->first_available_slot; i++){
+        if(obj->output_buffer[i]=='\0'){
+            char*ngram=&obj->output_buffer[obj->start_ngram];
+            obj->start_ngram=i+1;
+            return ngram;
+        }
+    }
+    return 0;
 }
 
-void rm_init(result_manager* obj){
+/*Print result of batch*/
+//-rm display result has to print all the results that has been used from result manager
+//-also give to topk, if needed, the ngrams
+void rm_display_result(result_manager* obj){
+    if(obj->k>0){
+        rm_prepare_topk(obj);
+    }
+    int i;
+    for(i=0; i<obj->size; i++){
+        //Format result as needed
+        int j;
+        for(j=0; j<obj->first_available_slot; i++){
+            if(obj->result[i].output_buffer[j]=='\0'){
+                obj->result[i].output_buffer[i]='|';
+            }
+        }
+        obj->result[i].output_buffer[obj->first_available_slot]='\0';
+        fprintf(obj->output,"%s",obj->result[i].output_buffer);
+    }
+    if(obj->k>0){
+        topk(obj->topk.Hash, obj->k);
+        Hash_reuse(obj->topk.Hash);
+    }
+}
 
+void rm_prepare_topk(result_manager* obj){
+    int i;
+    for(i=0; i<obj->first_available_slot; i++){
+        char* ngram;
+        ngram=result_fetch_ngram(&obj->result[i]);
+        while(ngram!=NULL){
+            int length=strlen(ngram);
+            Hash_insert(obj->topk.Hash, ngram, length);
+            ngram=result_fetch_ngram(&obj->result[i]);
+        }
+    }
+}
+
+void rm_init(result_manager* obj, FILE* fp){
+    obj->output=fp;
+    /*At first topk is not needed*/
+    obj->k=-1;
+    obj->result=malloc(sizeof(result)*NUMBER_OF_LINES); 
+    if(obj->result==NULL){
+        fprintf(stderr,"Error in malloc :: rm_init\n");
+        exit(-1);
+    }
+    obj->size=NUMBER_OF_LINES;
+    obj->first_available_slot=0;
+    /*Initialise each result*/
+    int i;
+    for(i=0;i<obj->size;i++){
+        result_init(&obj->result[i]);
+    }
 }
 
 void rm_fin(result_manager* obj){
-
+    if(obj->k>0){
+        Hash_fin(obj->topk.Hash);
+    }
+    if(obj->result==NULL) return;
+    int i;
+    for(i=0; i<obj->size; i++){
+        result_fin(&obj->result[i]);
+    }
+    free(obj->result);
 }
 
+/*This function is called when line mananager read a line F and a number.
+Initialise topk*/
 void rm_use_topk(result_manager* obj, int k){
+    obj->k=k;
+    Hash_init(obj->topk.Hash);
+}   
 
-}
-
+//Returns the result space of first available slot
 result* rm_get_result(result_manager* obj){
-
+    int pos=obj->first_available_slot;
+    //Checks if array should be expanded
+    if(obj->first_available_slot==obj->size){
+        result* temp= realloc(obj->result, sizeof(result)*2*obj->size);
+        if(temp==NULL){
+            fprintf(stderr, "Realloc failed :: rm_get_result\n");
+            exit(-1);
+        }
+        obj->result=temp;
+        obj->size=2*obj->size;
+        //Initisialize result
+        int i;
+        for(i=obj->first_available_slot; i<obj->size; i++){
+            result_init(&obj->result[i]);
+        }
+    }
+    obj->first_available_slot++;
+    return &obj->result[pos];
 }

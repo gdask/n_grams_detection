@@ -5,7 +5,7 @@
 #define NUMBER_OF_LINES 28
 #include <stdbool.h>
 #include <stdio.h>
-//#include "./topk/topk.h"
+
 #include "./topk/topk_hash.h"
 
 typedef struct line{
@@ -30,18 +30,18 @@ typedef struct line_manager{
 }line_manager;
 
 typedef struct result{
-    FILE *output;
     char* output_buffer;
     int output_bufsize;
     int first_available_slot; //first available slot to put words of word_buffer
-    int buffer_start; //output buffer of print result of queries
+    int start_ngram;
 }result;
 
 typedef struct result_manager{
+    FILE *output;
     result* result;
     int size;
     int first_available_slot;
-    TopK *topk;
+    TopK topk;
     int k; //if k!=0, keeps how many ngrams printed from topk, if k==-1, no need for create topk
 }result_manager;
 
@@ -76,15 +76,17 @@ line* lm_fetch_independent_line(line_manager* obj);
 ///////////////////////////////////////////////////////////////////////////
 
 //Result of each query functions
-void result_init(result* obj,FILE *fp); //Initilize struct
+void result_init(result* obj); //Initilize struct
 void result_fin(result* obj); //Deallocates any malloced memory
 // "|hello world [new words]" is appended at the result
 void result_ngram_detected(result* obj, line *l, int word_count);
 //writes the result, handles no result
 void result_completed(result* obj);
+//returns ngram in order to insert it in topk
+char* result_fetch_ngram(result* obj);
 
 //Result Manager 
-void rm_init(result_manager* obj);
+void rm_init(result_manager* obj, FILE *fp);
 void rm_fin(result_manager* obj);
 //Topk structure should be used
 void rm_use_topk(result_manager* obj, int k);
@@ -93,5 +95,7 @@ void rm_use_topk(result_manager* obj, int k);
 void rm_display_result(result_manager* obj);
 //return space where result of each query can be written
 result* rm_get_result(result_manager* obj);
+//for topk structure
+void rm_prepare_topk(result_manager* obj);
 
 #endif

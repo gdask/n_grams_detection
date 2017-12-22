@@ -65,7 +65,7 @@ int main(int argc,char* argv[]){
     line_manager queries;
     result_manager results;
     line_manager_init(&queries,query_file,'Q');
-    rm_init(&results);
+    rm_init(&results, stdout);
     Job task;
     task.arg1 = &db;
     task.version = 1;
