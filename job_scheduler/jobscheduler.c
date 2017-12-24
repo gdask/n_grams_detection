@@ -42,6 +42,7 @@ void job_scheduler_fin(job_scheduler* obj){
 void js_submit_job(job_scheduler* obj,Job task){
     if(obj->job_arr_size==obj->num_of_jobs){
         obj->tasks = realloc(obj->tasks,2*obj->job_arr_size*sizeof(Job));
+        obj->job_arr_size *=2;
         if(obj->tasks==NULL){
             fprintf(stderr,"js_submit_job realloc failed\n");
             exit(-1);

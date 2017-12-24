@@ -38,7 +38,7 @@ int main(int argc,char* argv[]){
     start = clock();
 
     //FIRST CREATE JOB SCHEDULER
-    int threads = 4;
+    int threads = 1;
     job_scheduler js;
     pthread_t *thread_ids=job_scheduler_init(&js,threads);
     //THEN CREATE TRIE
@@ -53,6 +53,7 @@ int main(int argc,char* argv[]){
         trie_insert(&db,current_line,0);
         current_line = lm_fetch_sequence_line(&lm_init);
     }
+    //return 0;
     char trie_status = lm_get_file_status(&lm_init);
     //compress trie if needed
     if(trie_status=='S')trie_compress(&db);

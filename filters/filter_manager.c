@@ -43,7 +43,7 @@ void filter_manager_fin(filter_manager* obj){
     #else
     for(i=0;i<obj->number_of_threads;i++) hash_pset_fin(&obj->detected_nodes[i]);
     #endif
-    free(&obj->detected_nodes);
+    free(obj->detected_nodes);
 }
 
 abstract_filter* get_filter(filter_manager* obj,void** unique_func_ptr){

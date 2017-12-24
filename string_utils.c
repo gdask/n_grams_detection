@@ -101,15 +101,18 @@ char* line_fetch_word(line* obj){
 /*Parse ngram and replace \n with \0, also keeps the end of line*/
 void line_parse(line* obj){
     /*Replace \n and _ with NULL*/
+    if(obj->buffer==NULL) exit(-1);
     int i=0;
     int words=0;
     while(obj->buffer[i]!='\n'){
+        fprintf(stderr,"%c",obj->buffer[i]);
         if(obj->buffer[i]==' '){
             words++;
             obj->buffer[i]='\0';
         }
         i++;
     }
+    fprintf(stderr,"\n");
     words++; //dont forget the last word is followed by \n not space
     obj->buffer[i]='\0'; // new line -> NULL
     obj->line_end=i;
@@ -200,6 +203,7 @@ int Qline_fetch(line* obj, FILE* fp){
 
         //In case of F you just ignore this line.
         if(obj->buffer[0]=='F'){
+            obj->k=0;
             if(obj->buffer[1]==' '){
                 char *ptr;
                 long ret;
@@ -391,6 +395,7 @@ void result_fin(result* obj){
 
 /*Αdd word_count of the words of line manager(current_ngram) to output buffer plus one |*/
 void result_ngram_detected(result* obj, line *l, int word_count){
+    return;
     char* p_ngram;
     p_ngram=&l->buffer[l->n_gram_position];
     while(word_count>0){
@@ -422,6 +427,7 @@ void result_ngram_detected(result* obj, line *l, int word_count){
 
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
 void result_completed(result* obj){
+    return ;
     if(obj->first_available_slot==0){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
     }    
@@ -447,6 +453,7 @@ char* result_fetch_ngram(result* obj){
 //-rm display result has to print all the results that has been used from result manager
 //-also give to topk, if needed, the ngrams
 void rm_display_result(result_manager* obj){
+    return ;
     if(obj->k>0){
         rm_prepare_topk(obj);
     }
@@ -485,6 +492,7 @@ void rm_init(result_manager* obj, FILE* fp){
     obj->output=fp;
     /*At first topk is not needed*/
     obj->k=-1;
+    Hash_init(obj->topk.Hash);
     obj->result=malloc(sizeof(result)*NUMBER_OF_LINES); 
     if(obj->result==NULL){
         fprintf(stderr,"Error in malloc :: rm_init\n");
@@ -500,9 +508,9 @@ void rm_init(result_manager* obj, FILE* fp){
 }
 
 void rm_fin(result_manager* obj){
-    if(obj->k>0){
+    //if(obj->k>0){
         Hash_fin(obj->topk.Hash);
-    }
+    //}
     if(obj->result==NULL) return;
     int i;
     for(i=0; i<obj->size; i++){
@@ -515,7 +523,7 @@ void rm_fin(result_manager* obj){
 Initialise topk*/
 void rm_use_topk(result_manager* obj, int k){
     obj->k=k;
-    Hash_init(obj->topk.Hash);
+    //Hash_init(obj->topk.Hash);
 }   
 
 //Returns the result space of first available slot
