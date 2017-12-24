@@ -105,14 +105,14 @@ void line_parse(line* obj){
     int i=0;
     int words=0;
     while(obj->buffer[i]!='\n'){
-        fprintf(stderr,"%c",obj->buffer[i]);
+        //fprintf(stderr,"%c",obj->buffer[i]);
         if(obj->buffer[i]==' '){
             words++;
             obj->buffer[i]='\0';
         }
         i++;
     }
-    fprintf(stderr,"\n");
+    //fprintf(stderr,"\n");
     words++; //dont forget the last word is followed by \n not space
     obj->buffer[i]='\0'; // new line -> NULL
     obj->line_end=i;
@@ -127,7 +127,7 @@ void line_manager_init(line_manager* obj, FILE *fp, char lm_status){
     obj->input=fp;
     obj->lm_status=lm_status;
     obj->number_of_lines=NUMBER_OF_LINES;
-    obj->line=(line*) malloc(sizeof(line)*NUMBER_OF_LINES);
+    obj->line=(line**) malloc(sizeof(line*)*NUMBER_OF_LINES);
     if(obj->line==NULL){
         fprintf(stderr, "Malloc failed :: line_manager_init\n");
         exit(-1);
@@ -135,7 +135,12 @@ void line_manager_init(line_manager* obj, FILE *fp, char lm_status){
     //for each line, initialize each structure
     int i;
     for(i=0; i<obj->number_of_lines; i++){
-        line_init(&obj->line[i]);
+        obj->line[i] = malloc(sizeof(line));
+        if(obj->line[i]==NULL){
+            fprintf(stderr, "Malloc failed :: line_manager_init\n");
+            exit(-1);
+        }
+        line_init(obj->line[i]);
     }
     obj->first_available_slot=0;
     return;
@@ -145,7 +150,8 @@ void line_manager_fin(line_manager* obj){
     if(obj->line==NULL) return;
     int i=0;
     for(i=0; i<obj->number_of_lines; i++){
-        line_fin(&obj->line[i]);
+        line_fin(obj->line[i]);
+        free(obj->line[i]);
     }
     free(obj->line);
 
@@ -256,7 +262,7 @@ int Iline_fetch(line* obj, FILE* input){
         else if(strcmp(&obj->buffer[2], "STATIC\n")==0){
             return 3;
         }
-        printf("line %s", obj->buffer);
+        //printf("line %s", obj->buffer);
     }
     else{ // EOF is found, my work here is done
         return -1;
@@ -276,7 +282,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
     }
     //Check if number of lines is enough
     if(obj->first_available_slot==obj->number_of_lines){
-        line* temp = realloc(obj->line, 2*obj->number_of_lines*sizeof(line));
+        line** temp = realloc(obj->line, 2*obj->number_of_lines*sizeof(line*));
         if(temp==NULL){
             fprintf(stderr, "Error in realloc :: lm_fetch_sequence_line\n");
             exit(-1);
@@ -286,37 +292,42 @@ line* lm_fetch_sequence_line(line_manager* obj){
         /*Initialise new lines*/
         int i;
         for(i=obj->first_available_slot; i< obj->number_of_lines; i++){
-            line_init(&obj->line[i]);
+            obj->line[i] = malloc(sizeof(line));
+            if(obj->line[i]==NULL){
+                fprintf(stderr, "Malloc failed :: line_manager_init\n");
+                exit(-1);
+            }
+            line_init(obj->line[i]);
         }
     }
     //For files .work
     int retval=0;
     if(obj->lm_status=='Q'){
-        retval=Qline_fetch(&obj->line[pos], obj->input);
+        retval=Qline_fetch(obj->line[pos], obj->input);
         if(retval==0){
             obj->first_available_slot++;
-            if(line_is_query(&obj->line[pos])!=true){
-                line_parse(&obj->line[pos]);
-            }
-            return &obj->line[pos];
+            //if(line_is_query(obj->line[pos])!=true){
+                line_parse(obj->line[pos]);
+            //}
+            return obj->line[pos];
         }
         else return 0;
     }
     //For files .init
     else if(obj->lm_status=='I'){
-        retval=Iline_fetch(&obj->line[pos], obj->input);
+        retval=Iline_fetch(obj->line[pos], obj->input);
         if(retval==2){
             obj->file_status='D';
-            retval=Iline_fetch(&obj->line[pos], obj->input);
+            retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==3){
             obj->file_status='S';
-            retval=Iline_fetch(&obj->line[pos], obj->input);
+            retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==0){
             obj->first_available_slot++;
-            line_parse(&obj->line[pos]);
-            return &obj->line[pos];
+            line_parse(obj->line[pos]);
+            return obj->line[pos];
         }
         else return 0;
     }
@@ -327,7 +338,7 @@ line* lm_fetch_independent_line(line_manager* obj){
     int pos=obj->first_available_slot;
     //Check if number of lines is enough
     if(obj->first_available_slot==obj->number_of_lines){
-        line* temp = realloc(obj->line, 2*obj->number_of_lines*sizeof(line));
+        line** temp = realloc(obj->line, 2*obj->number_of_lines*sizeof(line*));
         if(temp==NULL){
             fprintf(stderr, "Error in realloc :: lm_fetch_sequence_line\n");
             exit(-1);
@@ -337,34 +348,41 @@ line* lm_fetch_independent_line(line_manager* obj){
         /*Initialise new lines*/
         int i;
         for(i=obj->first_available_slot; i< obj->number_of_lines; i++){
-            line_init(&obj->line[i]);
+            obj->line[i] = malloc(sizeof(line));
+            if(obj->line[i]==NULL){
+                fprintf(stderr, "Malloc failed :: line_manager_init\n");
+                exit(-1);
+            }
+            line_init(obj->line[i]);
         }
     }
     //For files .work
     int retval=0;
     if(obj->lm_status=='Q'){
-        retval=Qline_fetch(&obj->line[pos], obj->input);
+        retval=Qline_fetch(obj->line[pos], obj->input);
+        obj->first_available_slot++;
         if(retval==0){
-            if(line_is_query(&obj->line[pos])!=true){
-                line_parse(&obj->line[pos]);
-            }
-            return &obj->line[pos];
+            //if(line_is_query(obj->line[pos])!=true){
+                line_parse(obj->line[pos]);
+            //}
+            return obj->line[pos];
         }
         else return 0;
     }
     else if(obj->lm_status=='I'){
-        retval=Iline_fetch(&obj->line[pos], obj->input);
+        retval=Iline_fetch(obj->line[pos], obj->input);
+        obj->first_available_slot++;
         if(retval==2){
             obj->file_status='D';
-            retval=Iline_fetch(&obj->line[pos], obj->input);
+            retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==3){
             obj->file_status='S';
-            retval=Iline_fetch(&obj->line[pos], obj->input);
+            retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==0){    
-            line_parse(&obj->line[pos]);
-            return &obj->line[pos];
+            line_parse(obj->line[pos]);
+            return obj->line[pos];
         }
         else return 0;
     }

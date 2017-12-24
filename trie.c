@@ -125,7 +125,11 @@ bool trie_delete(trie* obj,line* lm){
 }
 
 void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
-    line_parse(lm);
+    if(line_is_query(lm)!=true){
+        fprintf(stderr,"WRONG INPUT\n");
+        return;
+    }
+    //line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -156,7 +160,7 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
             }
             //get next word
             current_word += current_node.string_length+1;
-            while(*current_word=='\0') current_word++;
+            while(*current_word=='\0' && current_word< eof) current_word++;
         }
     }
     result_completed(rm);
@@ -168,7 +172,7 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
         fprintf(stderr,"FALSE INPUT\n");
         exit(-1);
     }
-    line_parse(lm);
+    //line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -195,7 +199,7 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
                 }
             }
             current_word += current_node.string_length+1;
-            while(*current_word=='\0') current_word++;
+            while(*current_word=='\0' && current_word<eof) current_word++;
 
             if(current_node.node_ptr->mode=='s'){ //hyper node
                 //set buf at the second hyper node word
@@ -234,7 +238,11 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
 }
 #else
 void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
-    line_parse(lm);
+    if(line_is_query(lm)!=true){
+        fprintf(stderr,"FALSE INPUT\n");
+        exit(-1);
+    }
+    //line_parse(lm);
     clock_t start = clock();
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
@@ -262,7 +270,7 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
                 }
             }
             current_word += current_node.string_length+1;
-            while(*current_word=='\0') current_word++;
+            while(*current_word=='\0' && current_word<eof) current_word++;
 
             if(current_node.node_ptr->mode=='s'){ //hyper node
                 //set word info at second word
@@ -298,7 +306,7 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
                     }
                     //set buffers at next word
                     info++;
-                    while(*buf2=='\0') buf2++;
+                    while(*buf2=='\0' && buf2<eof) buf2++;
                     current_word = buf2;
                 }
                 break;

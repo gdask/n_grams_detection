@@ -26,7 +26,7 @@ typedef struct line_manager{
     char lm_status; //lm_status is for init file or query
     int first_available_slot;
     int number_of_lines;
-    line* line; //lines of batch
+    line** line; //lines of batch
 }line_manager;
 
 typedef struct result{
