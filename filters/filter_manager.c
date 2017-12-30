@@ -48,7 +48,7 @@ void filter_manager_fin(filter_manager* obj){
 
 abstract_filter* get_filter(filter_manager* obj,void** unique_func_ptr){
     *unique_func_ptr = obj->ngram_unique;
-    int thread_id = pthread_self();
+    pthread_t thread_id = pthread_self();
     int i;
     for(i=0;i<obj->number_of_threads;i++){ //finds the right filter
         if(pthread_equal(thread_id,obj->t_ids[i])!=0){
@@ -56,7 +56,8 @@ abstract_filter* get_filter(filter_manager* obj,void** unique_func_ptr){
             return &obj->detected_nodes[i];
         }
     }
-    fprintf(stderr,"Thread:%d,not in filter manager list\n",thread_id);
+    fprintf(stderr,"Thread:%d,not in filter manager list\n",(int)thread_id);
+    for(i=0;i<obj->number_of_threads;i++) fprintf(stderr,"In list :%d\n",(int)obj->t_ids[i]);
     exit(-1);
     return NULL;
 }
