@@ -103,7 +103,7 @@ int main(int argc,char* argv[]){
                     trie_delete(&db,queries.line[i]);
                 }
             }
-            queries.first_available_slot=0;
+            //queries.first_available_slot=0;
         }
     }
 

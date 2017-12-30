@@ -127,6 +127,7 @@ bool trie_delete(trie* obj,line* lm){
 void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
     if(line_is_query(lm)!=true){
         fprintf(stderr,"WRONG INPUT\n");
+        print_line(lm);
         return;
     }
     //line_parse(lm);

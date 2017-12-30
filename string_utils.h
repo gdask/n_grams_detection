@@ -58,6 +58,7 @@ bool line_is_query(line* obj);
 bool line_is_insert(line* obj);
 bool line_is_delete(line* obj);
 bool line_is_F(line* obj);
+void print_line(line* obj);
 
 //Input manager functions
 void line_manager_init(line_manager* obj,FILE *fp, char file_status); //Initilize struct
