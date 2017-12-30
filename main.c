@@ -94,7 +94,6 @@ int main(int argc,char* argv[]){
             rm_display_result(&results);
             //now we have to make actual deletions in trie
             //make sure that every resource is ready for the next batch
-            current_line = lm_fetch_sequence_line(&queries);
             //now delete nodes from trie
             int i;
             for(i=0;i<queries.first_available_slot;i++){
@@ -103,7 +102,8 @@ int main(int argc,char* argv[]){
                     trie_delete(&db,queries.line[i]);
                 }
             }
-            //queries.first_available_slot=0;
+            queries.first_available_slot=0;
+            current_line = lm_fetch_sequence_line(&queries);
         }
     }
 

@@ -206,7 +206,7 @@ int Qline_fetch(line* obj, FILE* fp){
                 return -1;
             }
         }
-        fprintf(stderr,"Line read:%s", obj->buffer);
+        //fprintf(stderr,"Line read:%s", obj->buffer);
     }
     else{ // EOF is found, my work here is done
         //printf("EOF\n");
@@ -217,7 +217,7 @@ int Qline_fetch(line* obj, FILE* fp){
     if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
     /*keep line status, check if ID is valid*/
         obj->line_status=obj->buffer[0];
-        fprintf(stderr, "Line status %c\n", obj->line_status);
+        //fprintf(stderr, "Line status %c\n", obj->line_status);
         //In case of F you just ignore this line.
         if(obj->buffer[0]=='F'){
             obj->k=0;
@@ -295,6 +295,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
     int retval=0;
     if(obj->lm_status=='Q'){
         retval=Qline_fetch(obj->line[pos], obj->input);
+        if(obj->first_available_slot==0) obj->first_available_slot++;
         if(retval==0){
             //if(line_is_query(obj->line[pos])!=true){
                 line_parse(obj->line[pos]);
@@ -306,6 +307,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
     //For files .init
     else if(obj->lm_status=='I'){
         retval=Iline_fetch(obj->line[pos], obj->input);
+        if(obj->first_available_slot==0) obj->first_available_slot++;
         if(retval==2){
             obj->file_status='D';
             retval=Iline_fetch(obj->line[pos], obj->input);
@@ -435,7 +437,6 @@ void result_ngram_detected(result* obj, line *l, int word_count){
 
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
 void result_completed(result* obj){
-    return ;
     if(obj->first_available_slot==0){ //no ngram detected
         strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
     }    
@@ -443,6 +444,7 @@ void result_completed(result* obj){
         obj->output_buffer[obj->first_available_slot-1]='\n';
     }
     obj->first_available_slot=0;
+    obj->start_ngram=0;
 }
 
 char* result_fetch_ngram(result* obj){
@@ -461,15 +463,14 @@ char* result_fetch_ngram(result* obj){
 //-rm display result has to print all the results that has been used from result manager
 //-also give to topk, if needed, the ngrams
 void rm_display_result(result_manager* obj){
-    return ;
     if(obj->k>0){
         rm_prepare_topk(obj);
     }
     int i;
-    for(i=0; i<obj->size; i++){
+    for(i=0; i<obj->first_available_slot; i++){
         //Format result as needed
         int j;
-        for(j=0; j<obj->first_available_slot; i++){
+        for(j=0; j<obj->result[i]->first_available_slot; i++){
             if(obj->result[i]->output_buffer[j]=='\0'){
                 obj->result[i]->output_buffer[i]='|';
             }
@@ -481,6 +482,7 @@ void rm_display_result(result_manager* obj){
         topk(obj->topk.Hash, obj->k);
         Hash_reuse(obj->topk.Hash);
     }
+    obj->first_available_slot=0;
 }
 
 void rm_prepare_topk(result_manager* obj){

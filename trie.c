@@ -153,8 +153,8 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
             //NEW CHANGE
             if(current_node.node_ptr->final){
                 //Version check
-                //if(current_node.node_ptr->version.added > version) break;
-                //if(current_node.node_ptr->version.deleted <= version) break;
+                if(current_node.node_ptr->version.added > version) break;
+                if(current_node.node_ptr->version.deleted <= version) break;
                 if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
                     result_ngram_detected(rm,lm,words_found);
                 }
