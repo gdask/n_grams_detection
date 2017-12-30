@@ -21,6 +21,16 @@ void line_fin(line* obj){
     free(obj->buffer);
 }
 
+void print_line(line* obj){
+    int i;
+    fprintf(stderr,"LINE STATUS:%c\n",obj->line_status);
+    for(i=0;i<obj->line_end;i++){
+        if(obj->buffer[i]=='\0') fprintf(stderr," ");
+        fprintf(stderr,"%c",obj->buffer[i]);
+    }
+    fprintf(stderr,"\n");
+}
+
 /*boolean functions that concern line_status*/
 bool line_is_query(line* obj){
     if(obj->line_status=='Q')
@@ -276,7 +286,7 @@ int Iline_fetch(line* obj, FILE* input){
 line* lm_fetch_sequence_line(line_manager* obj){
     int pos;
     if(obj->first_available_slot==0){
-        pos = obj->first_available_slot;
+        pos = 0;
     }
     else{
         pos = obj->first_available_slot-1;
@@ -305,6 +315,7 @@ line* lm_fetch_sequence_line(line_manager* obj){
             retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==0){
+            //obj->first_available_slot++;
             line_parse(obj->line[pos]);
             return obj->line[pos];
         }
@@ -339,8 +350,8 @@ line* lm_fetch_independent_line(line_manager* obj){
     int retval=0;
     if(obj->lm_status=='Q'){
         retval=Qline_fetch(obj->line[pos], obj->input);
-        obj->first_available_slot++;
         if(retval==0){
+            obj->first_available_slot++;
             //if(line_is_query(obj->line[pos])!=true){
                 line_parse(obj->line[pos]);
             //}
