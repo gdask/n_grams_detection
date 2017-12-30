@@ -38,7 +38,7 @@ int main(int argc,char* argv[]){
     start = clock();
 
     //FIRST CREATE JOB SCHEDULER
-    int threads = 1;
+    int threads = 4;
     job_scheduler js;
     pthread_t *thread_ids=job_scheduler_init(&js,threads);
     //THEN CREATE TRIE
@@ -95,6 +95,15 @@ int main(int argc,char* argv[]){
             //now we have to make actual deletions in trie
             //make sure that every resource is ready for the next batch
             current_line = lm_fetch_sequence_line(&queries);
+            //now delete nodes from trie
+            int i;
+            for(i=0;i<queries.first_available_slot;i++){
+                if(line_is_delete(queries.line[i])){
+                    //fprintf(stderr,"Line number is %d\n",i);
+                    trie_delete(&db,queries.line[i]);
+                }
+            }
+            queries.first_available_slot=0;
         }
     }
 
