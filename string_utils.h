@@ -38,7 +38,7 @@ typedef struct result{
 
 typedef struct result_manager{
     FILE *output;
-    result* result;
+    result** result;
     int size;
     int first_available_slot;
     TopK topk;

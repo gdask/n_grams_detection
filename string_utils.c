@@ -15,6 +15,7 @@ void line_init(line* obj){
     obj->bufsize = INIT_SIZE_BUF;
     return;
 }
+
 void line_fin(line* obj){
     if(obj->buffer==NULL) return;
     free(obj->buffer);
@@ -195,7 +196,7 @@ int Qline_fetch(line* obj, FILE* fp){
                 return -1;
             }
         }
-        //printf("Line read:%s", obj->buffer);
+        fprintf(stderr,"Line read:%s", obj->buffer);
     }
     else{ // EOF is found, my work here is done
         //printf("EOF\n");
@@ -206,7 +207,7 @@ int Qline_fetch(line* obj, FILE* fp){
     if((obj->buffer[0]=='F')||((obj->buffer[0]=='A' || obj->buffer[0]=='D' ||obj->buffer[0]=='Q' ) && obj->buffer[1]==' ')){
     /*keep line status, check if ID is valid*/
         obj->line_status=obj->buffer[0];
-
+        fprintf(stderr, "Line status %c\n", obj->line_status);
         //In case of F you just ignore this line.
         if(obj->buffer[0]=='F'){
             obj->k=0;
@@ -280,32 +281,11 @@ line* lm_fetch_sequence_line(line_manager* obj){
     else{
         pos = obj->first_available_slot-1;
     }
-    //Check if number of lines is enough
-    if(obj->first_available_slot==obj->number_of_lines){
-        line** temp = realloc(obj->line, 2*obj->number_of_lines*sizeof(line*));
-        if(temp==NULL){
-            fprintf(stderr, "Error in realloc :: lm_fetch_sequence_line\n");
-            exit(-1);
-        }
-        obj->line=temp;
-        obj->number_of_lines=2*obj->number_of_lines;
-        /*Initialise new lines*/
-        int i;
-        for(i=obj->first_available_slot; i< obj->number_of_lines; i++){
-            obj->line[i] = malloc(sizeof(line));
-            if(obj->line[i]==NULL){
-                fprintf(stderr, "Malloc failed :: line_manager_init\n");
-                exit(-1);
-            }
-            line_init(obj->line[i]);
-        }
-    }
     //For files .work
     int retval=0;
     if(obj->lm_status=='Q'){
         retval=Qline_fetch(obj->line[pos], obj->input);
         if(retval==0){
-            obj->first_available_slot++;
             //if(line_is_query(obj->line[pos])!=true){
                 line_parse(obj->line[pos]);
             //}
@@ -325,7 +305,6 @@ line* lm_fetch_sequence_line(line_manager* obj){
             retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==0){
-            obj->first_available_slot++;
             line_parse(obj->line[pos]);
             return obj->line[pos];
         }
@@ -480,12 +459,12 @@ void rm_display_result(result_manager* obj){
         //Format result as needed
         int j;
         for(j=0; j<obj->first_available_slot; i++){
-            if(obj->result[i].output_buffer[j]=='\0'){
-                obj->result[i].output_buffer[i]='|';
+            if(obj->result[i]->output_buffer[j]=='\0'){
+                obj->result[i]->output_buffer[i]='|';
             }
         }
-        obj->result[i].output_buffer[obj->first_available_slot]='\0';
-        fprintf(obj->output,"%s",obj->result[i].output_buffer);
+        obj->result[i]->output_buffer[obj->first_available_slot]='\0';
+        fprintf(obj->output,"%s",obj->result[i]->output_buffer);
     }
     if(obj->k>0){
         topk(obj->topk.Hash, obj->k);
@@ -497,11 +476,11 @@ void rm_prepare_topk(result_manager* obj){
     int i;
     for(i=0; i<obj->first_available_slot; i++){
         char* ngram;
-        ngram=result_fetch_ngram(&obj->result[i]);
+        ngram=result_fetch_ngram(obj->result[i]);
         while(ngram!=NULL){
             int length=strlen(ngram);
             Hash_insert(obj->topk.Hash, ngram, length);
-            ngram=result_fetch_ngram(&obj->result[i]);
+            ngram=result_fetch_ngram(obj->result[i]);
         }
     }
 }
@@ -511,7 +490,7 @@ void rm_init(result_manager* obj, FILE* fp){
     /*At first topk is not needed*/
     obj->k=-1;
     Hash_init(obj->topk.Hash);
-    obj->result=malloc(sizeof(result)*NUMBER_OF_LINES); 
+    obj->result=(result**)malloc(sizeof(result*)*NUMBER_OF_LINES); 
     if(obj->result==NULL){
         fprintf(stderr,"Error in malloc :: rm_init\n");
         exit(-1);
@@ -521,7 +500,12 @@ void rm_init(result_manager* obj, FILE* fp){
     /*Initialise each result*/
     int i;
     for(i=0;i<obj->size;i++){
-        result_init(&obj->result[i]);
+        obj->result[i]=malloc(sizeof(result));
+        if(obj->result[i]==NULL){
+            fprintf(stderr, "Error in malloc :: rm_init\n");
+            exit(-1);
+        }
+        result_init(obj->result[i]);
     }
 }
 
@@ -532,7 +516,8 @@ void rm_fin(result_manager* obj){
     if(obj->result==NULL) return;
     int i;
     for(i=0; i<obj->size; i++){
-        result_fin(&obj->result[i]);
+        result_fin(obj->result[i]);
+        free(obj->result[i]);
     }
     free(obj->result);
 }
@@ -549,7 +534,7 @@ result* rm_get_result(result_manager* obj){
     int pos=obj->first_available_slot;
     //Checks if array should be expanded
     if(obj->first_available_slot==obj->size){
-        result* temp= realloc(obj->result, sizeof(result)*2*obj->size);
+        result** temp= realloc(obj->result, sizeof(result*)*2*obj->size);
         if(temp==NULL){
             fprintf(stderr, "Realloc failed :: rm_get_result\n");
             exit(-1);
@@ -559,9 +544,14 @@ result* rm_get_result(result_manager* obj){
         //Initisialize result
         int i;
         for(i=obj->first_available_slot; i<obj->size; i++){
-            result_init(&obj->result[i]);
+            obj->result[i]=malloc(sizeof(result));
+            if(obj->result[i]==NULL){
+                fprintf(stderr, "Error in malloc :: rm_init\n");
+                exit(-1);
+            }
+            result_init(obj->result[i]);
         }
     }
     obj->first_available_slot++;
-    return &obj->result[pos];
+    return obj->result[pos];
 }
