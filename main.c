@@ -90,6 +90,7 @@ int main(int argc,char* argv[]){
         }
         else if(line_is_F(current_line)){
             rm_use_topk(&results,current_line->k);
+            //fprintf(stdout, "F\n");
             js_execute_jobs(&js);
             rm_display_result(&results);
             //now we have to make actual deletions in trie

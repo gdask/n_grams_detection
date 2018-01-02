@@ -220,7 +220,7 @@ int Qline_fetch(line* obj, FILE* fp){
         //fprintf(stderr, "Line status %c\n", obj->line_status);
         //In case of F you just ignore this line.
         if(obj->buffer[0]=='F'){
-            obj->k=0;
+            obj->k=-1;
             if(obj->buffer[1]==' '){
                 char *ptr;
                 long ret;
@@ -427,9 +427,8 @@ void result_ngram_detected(result* obj, line *l, int word_count){
         }
         else{
             obj->output_buffer[obj->first_available_slot]=*p_ngram;
-            // p_ngram++;
+            p_ngram++;
         }
-        p_ngram++;
         obj->first_available_slot++;
     }
     obj->output_buffer[obj->first_available_slot-1]='\0'; //last thing shouldn't be space but |
@@ -444,20 +443,8 @@ void result_completed(result* obj){
     else{
         obj->output_buffer[obj->first_available_slot-1]='\n';
     }
-    obj->first_available_slot=0;
-    obj->start_ngram=0;
-}
-
-char* result_fetch_ngram(result* obj){
-    int i;
-    for(i=obj->start_ngram; i<obj->first_available_slot; i++){
-        if(obj->output_buffer[i]=='\0'){
-            char*ngram=&obj->output_buffer[obj->start_ngram];
-            obj->start_ngram=i+1;
-            return ngram;
-        }
-    }
-    return 0;
+    //obj->first_available_slot=0;
+    //obj->start_ngram=0;
 }
 
 /*Print result of batch*/
@@ -476,24 +463,41 @@ void rm_display_result(result_manager* obj){
                 obj->result[i]->output_buffer[j]='|';
             }
         }
-        obj->result[i]->output_buffer[obj->first_available_slot]='\0';
-        //obj->result[i]->first_available_slot=0;
+        obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
+        obj->result[i]->first_available_slot=0;
         fprintf(obj->output,"%s",obj->result[i]->output_buffer);
     }
     if(obj->k>0){
         topk(obj->topk.Hash, obj->k);
-        Hash_reuse(obj->topk.Hash);
+        //fprintf(stderr, "Reused\n");
     }
+    Hash_reuse(obj->topk.Hash);
     obj->first_available_slot=0;
+    obj->k=-1;  // i should initialize each time k value
+}
+
+char* result_fetch_ngram(result* obj){
+    int i;
+    //fprintf(stderr,"%d %d\n", obj->start_ngram, obj->first_available_slot);
+    for(i=obj->start_ngram; i<obj->first_available_slot; i++){
+        if(obj->output_buffer[i]=='\0'){
+            char*ngram=&obj->output_buffer[obj->start_ngram];
+            obj->start_ngram=i+1;
+            return ngram;
+        }
+    }
+    obj->start_ngram=0;
+    return 0;
 }
 
 void rm_prepare_topk(result_manager* obj){
     int i;
     for(i=0; i<obj->first_available_slot; i++){
         char* ngram;
+        obj->result[i]->start_ngram=0;
         ngram=result_fetch_ngram(obj->result[i]);
         while(ngram!=NULL){
-            int length=strlen(ngram);
+            int length=strlen(ngram)+1;
             Hash_insert(obj->topk.Hash, ngram, length);
             ngram=result_fetch_ngram(obj->result[i]);
         }
@@ -541,7 +545,6 @@ void rm_fin(result_manager* obj){
 Initialise topk*/
 void rm_use_topk(result_manager* obj, int k){
     obj->k=k;
-    //Hash_init(obj->topk.Hash);
 }   
 
 //Returns the result space of first available slot
