@@ -405,9 +405,9 @@ void result_fin(result* obj){
 
 /*Αdd word_count of the words of line manager(current_ngram) to output buffer plus one |*/
 void result_ngram_detected(result* obj, line *l, int word_count){
-    return;
     char* p_ngram;
     p_ngram=&l->buffer[l->n_gram_position];
+    char* eof=&l->buffer[l->line_end];
     while(word_count>0){
         if(obj->first_available_slot==obj->output_bufsize){
             char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
@@ -419,7 +419,7 @@ void result_ngram_detected(result* obj, line *l, int word_count){
             obj->output_bufsize= 2*obj->output_bufsize;
         }
         if(*p_ngram=='\0'){
-            while(*p_ngram=='\0'){
+            while(*p_ngram=='\0' && p_ngram<eof){
                 p_ngram++;
             }
             word_count--;
@@ -427,8 +427,9 @@ void result_ngram_detected(result* obj, line *l, int word_count){
         }
         else{
             obj->output_buffer[obj->first_available_slot]=*p_ngram;
-            p_ngram++;
+            // p_ngram++;
         }
+        p_ngram++;
         obj->first_available_slot++;
     }
     obj->output_buffer[obj->first_available_slot-1]='\0'; //last thing shouldn't be space but |
@@ -470,12 +471,13 @@ void rm_display_result(result_manager* obj){
     for(i=0; i<obj->first_available_slot; i++){
         //Format result as needed
         int j;
-        for(j=0; j<obj->result[i]->first_available_slot; i++){
+        for(j=0; j<obj->result[i]->first_available_slot; j++){
             if(obj->result[i]->output_buffer[j]=='\0'){
-                obj->result[i]->output_buffer[i]='|';
+                obj->result[i]->output_buffer[j]='|';
             }
         }
         obj->result[i]->output_buffer[obj->first_available_slot]='\0';
+        //obj->result[i]->first_available_slot=0;
         fprintf(obj->output,"%s",obj->result[i]->output_buffer);
     }
     if(obj->k>0){
