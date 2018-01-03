@@ -3,6 +3,7 @@
 #define TOPK_HASH_H
 #define HASH_SIZE 99
 #define INIT_WORDLEN 128
+#define TOPK_MUTEX 0
 
 //In this part we use init_wordlen in order not to use malloc and free for each word, 
 //maybe later this side should be changed.
@@ -18,10 +19,19 @@ typedef struct bucket{
     int first_available_slot;
 }bucket;
 
+#if TOPK_MUTEX == 1
+#include <pthread.h>
+typedef struct Hash{
+    int max_freq;
+    bucket* Bucket;
+    pthread_mutex_t mtx;
+}Hash;
+#else
 typedef struct Hash{
     int max_freq;
     bucket* Bucket;
 }Hash;
+#endif
 
 void Hash_init(Hash*);
 void Hash_fin(Hash*);

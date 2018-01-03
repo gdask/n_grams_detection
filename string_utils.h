@@ -3,6 +3,7 @@
 
 #define INIT_SIZE_BUF 512
 #define NUMBER_OF_LINES 28
+#define  TOPK_MUTEX 0
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -29,12 +30,28 @@ typedef struct line_manager{
     line** line; //lines of batch
 }line_manager;
 
+#if TOPK_MUTEX==1
 typedef struct result{
     char* output_buffer;
     int output_bufsize;
     int first_available_slot; //first available slot to put words of word_buffer
     int start_ngram;
+    //bool k;
+    //TopK *topk;
 }result;
+
+#else
+typedef struct result{
+    char* output_buffer;
+    int output_bufsize;
+    int first_available_slot; //first available slot to put words of word_buffer
+    int start_ngram;
+    bool k;
+    TopK *topk;
+}result;
+
+#endif
+
 
 typedef struct result_manager{
     FILE *output;
@@ -77,7 +94,8 @@ line* lm_fetch_independent_line(line_manager* obj);
 ///////////////////////////////////////////////////////////////////////////
 
 //Result of each query functions
-void result_init(result* obj); //Initilize struct
+void result_init(result* obj);
+//void result_init(result* obj, TopK* top);
 void result_fin(result* obj); //Deallocates any malloced memory
 // "|hello world [new words]" is appended at the result
 void result_ngram_detected(result* obj, line *l, int word_count);
@@ -99,4 +117,5 @@ result* rm_get_result(result_manager* obj);
 //for topk structure
 void rm_prepare_topk(result_manager* obj);
 
+void prepare_topk(result* res_obj, TopK * obj);
 #endif

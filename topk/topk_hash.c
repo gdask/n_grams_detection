@@ -50,6 +50,7 @@ void Hash_init(Hash* obj){
         obj->Bucket[i].first_available_slot=0;
     }
     obj->max_freq=0;
+    //pthread_mutex_init(&obj->mtx,NULL);
 }
 
 void Hash_fin(Hash* obj){
@@ -68,7 +69,7 @@ void Hash_fin(Hash* obj){
         }
         free(obj->Bucket);
     }
-    //printf("Freed words:%d nodes: %d buckets%d\n", w,n,b);
+    //pthread_mutex_destroy(&obj->mtx);
 }
 
 //reuse structure

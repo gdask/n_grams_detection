@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 /*Line Functions*/
 /*Initialise structure line
@@ -384,8 +385,8 @@ line* lm_fetch_independent_line(line_manager* obj){
 /*Result Manager*/
 
 /*Initialise and deallocate Memory*/
-
 void result_init(result* obj){
+//void result_init(result* obj, TopK* top){
     obj->output_buffer=(char*)malloc(sizeof(char)*INIT_SIZE_BUF);
     if(obj->output_buffer==NULL){
         fprintf(stderr,"Malloc failed :: result_init\n");
@@ -394,6 +395,8 @@ void result_init(result* obj){
     obj->output_bufsize=INIT_SIZE_BUF;
     obj->first_available_slot=0;
     obj->start_ngram=0;
+    //obj->k=false;
+    //obj->topk=top;
 }
 
 void result_fin(result* obj){
@@ -443,38 +446,12 @@ void result_completed(result* obj){
     else{
         obj->output_buffer[obj->first_available_slot-1]='\0';
     }
-    //obj->first_available_slot=0;
-    //obj->start_ngram=0;
-}
-
-/*Print result of batch*/
-//-rm display result has to print all the results that has been used from result manager
-//-also give to topk, if needed, the ngrams
-void rm_display_result(result_manager* obj){
-    if(obj->k>0){
-        rm_prepare_topk(obj);
-    }
-    int i;
-    for(i=0; i<obj->first_available_slot; i++){
-        //Format result as needed
-        int j;
-        for(j=0; j<obj->result[i]->first_available_slot-1; j++){
-            if(obj->result[i]->output_buffer[j]=='\0'){
-                obj->result[i]->output_buffer[j]='|';
-            }
-        }
-        if(obj->result[i]->first_available_slot!=0)
-            obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
-        obj->result[i]->first_available_slot=0;
-        fprintf(obj->output,"%s\n",obj->result[i]->output_buffer);
-    }
-    if(obj->k>0){
-        topk(obj->topk.Hash, obj->k);
-        //fprintf(stderr, "Reused\n");
-    }
-    Hash_reuse(obj->topk.Hash);
-    obj->first_available_slot=0;
-    obj->k=-1;  // i should initialize each time k value
+    /*If k exists, topk now in used by this thread*/
+    /*if(obj->k==true){
+        pthread_mutex_lock(&obj->topk->Hash->mtx);
+        prepare_topk(obj, obj->topk);
+        pthread_mutex_unlock(&obj->topk->Hash->mtx);
+    }*/
 }
 
 char* result_fetch_ngram(result* obj){
@@ -489,20 +466,6 @@ char* result_fetch_ngram(result* obj){
     }
     obj->start_ngram=0;
     return 0;
-}
-
-void rm_prepare_topk(result_manager* obj){
-    int i;
-    for(i=0; i<obj->first_available_slot; i++){
-        char* ngram;
-        obj->result[i]->start_ngram=0;
-        ngram=result_fetch_ngram(obj->result[i]);
-        while(ngram!=NULL){
-            int length=strlen(ngram)+1;
-            Hash_insert(obj->topk.Hash, ngram, length);
-            ngram=result_fetch_ngram(obj->result[i]);
-        }
-    }
 }
 
 void rm_init(result_manager* obj, FILE* fp){
@@ -525,6 +488,7 @@ void rm_init(result_manager* obj, FILE* fp){
             fprintf(stderr, "Error in malloc :: rm_init\n");
             exit(-1);
         }
+        //result_init(obj->result[i], &obj->topk);
         result_init(obj->result[i]);
     }
 }
@@ -546,6 +510,11 @@ void rm_fin(result_manager* obj){
 Initialise topk*/
 void rm_use_topk(result_manager* obj, int k){
     obj->k=k;
+    //For mutex
+    /*int i;
+    for(i=0; i<obj->first_available_slot; i++){
+        obj->result[i]->k=true;
+    }*/
 }   
 
 //Returns the result space of first available slot
@@ -569,8 +538,65 @@ result* rm_get_result(result_manager* obj){
                 exit(-1);
             }
             result_init(obj->result[i]);
+            //result_init(obj->result[i], &obj->topk);
         }
     }
     obj->first_available_slot++;
     return obj->result[pos];
+}
+
+void prepare_topk(result* res_obj, TopK * obj){
+    char* ngram;
+    res_obj->start_ngram=0;
+    ngram=result_fetch_ngram(res_obj);
+    while(ngram!=NULL){
+        int length=strlen(ngram)+1;
+        Hash_insert(obj->Hash, ngram, length);
+        ngram=result_fetch_ngram(res_obj);
+    }
+}
+
+void rm_prepare_topk(result_manager* obj){
+    int i;
+    for(i=0; i<obj->first_available_slot; i++){
+        char* ngram;
+        obj->result[i]->start_ngram=0;
+        ngram=result_fetch_ngram(obj->result[i]);
+        while(ngram!=NULL){
+            int length=strlen(ngram)+1;
+            Hash_insert(obj->topk.Hash, ngram, length);
+            ngram=result_fetch_ngram(obj->result[i]);
+        }
+    }
+}
+
+/*Print result of batch*/
+//-rm display result has to print all the results that has been used from result manager
+//-also give to topk, if needed, the ngrams
+void rm_display_result(result_manager* obj){
+    if(obj->k>0){
+        rm_prepare_topk(obj);
+    }
+    int i;
+    for(i=0; i<obj->first_available_slot; i++){
+        //Format result as needed
+        int j;
+        for(j=0; j<obj->result[i]->first_available_slot-1; j++){
+            if(obj->result[i]->output_buffer[j]=='\0'){
+                obj->result[i]->output_buffer[j]='|';
+            }
+        }
+        if(obj->result[i]->first_available_slot!=0)
+            obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
+        obj->result[i]->first_available_slot=0;
+        fprintf(obj->output,"%s\n",obj->result[i]->output_buffer);
+        //obj->result[i]->k=false;
+    }
+    if(obj->k>0){
+        topk(obj->topk.Hash, obj->k);
+        //fprintf(stderr, "Reused\n");
+    }
+    Hash_reuse(obj->topk.Hash);
+    obj->first_available_slot=0;
+    obj->k=-1;  // i should initialize each time k value
 }
