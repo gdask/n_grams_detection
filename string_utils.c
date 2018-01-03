@@ -68,7 +68,7 @@ char* line_fetch_ngram(line* obj){
     }
     if(i>=obj->line_end){
         obj->word_start=NULL; //no ngrams no words
-        return false;
+        return NULL;
     }
     obj->n_gram_position=i+1; //position of n_gram
     if(obj->buffer[i+1]=='\0'){
@@ -438,10 +438,10 @@ void result_ngram_detected(result* obj, line *l, int word_count){
 /*Keep the result of Q in output buffer, buffer_start is keep in order to know where to start keeping new result*/
 void result_completed(result* obj){
     if(obj->first_available_slot==0){ //no ngram detected
-        strcpy(&obj->output_buffer[obj->first_available_slot],"-1\n");
+        strcpy(&obj->output_buffer[obj->first_available_slot],"-1");
     }    
     else{
-        obj->output_buffer[obj->first_available_slot-1]='\n';
+        obj->output_buffer[obj->first_available_slot-1]='\0';
     }
     //obj->first_available_slot=0;
     //obj->start_ngram=0;
@@ -458,14 +458,15 @@ void rm_display_result(result_manager* obj){
     for(i=0; i<obj->first_available_slot; i++){
         //Format result as needed
         int j;
-        for(j=0; j<obj->result[i]->first_available_slot; j++){
+        for(j=0; j<obj->result[i]->first_available_slot-1; j++){
             if(obj->result[i]->output_buffer[j]=='\0'){
                 obj->result[i]->output_buffer[j]='|';
             }
         }
-        obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
+        if(obj->result[i]->first_available_slot!=0)
+            obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
         obj->result[i]->first_available_slot=0;
-        fprintf(obj->output,"%s",obj->result[i]->output_buffer);
+        fprintf(obj->output,"%s\n",obj->result[i]->output_buffer);
     }
     if(obj->k>0){
         topk(obj->topk.Hash, obj->k);
