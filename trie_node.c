@@ -98,6 +98,7 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     if(tn_is_leaf(obj)==true){
         tn_leaf_to_normal(obj,init_child_size);
         ca_force_append(&obj->next,input_word,0);
+        obj->next.Array[0].version.added = 0;
         return &obj->next.Array[0];
     }
     //Search in children
@@ -107,6 +108,7 @@ trie_node* tn_insert(trie_node* obj,int init_child_size,char* input_word){
     }
     else{
         ca_force_append(&obj->next,input_word,result.index);
+        obj->next.Array[result.index].version.added = 0;
         return &obj->next.Array[result.index];
     }
 }

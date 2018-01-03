@@ -37,12 +37,12 @@ void trie_insert(trie* obj,line* lm,unsigned int version){
         fprintf(stderr,"NULL CURRENT NODE EXCEPTION\n");
         exit(-1);
     }*/
-    current_node->version.added = version;
-    current_node->version.deleted = -1;
     current_word = line_fetch_word(lm);
     while(current_word!=NULL){
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         current_word = line_fetch_word(lm);
+    }
+    if(current_node->version.added==0){
         current_node->version.added = version;
         current_node->version.deleted = -1;
     }
@@ -68,7 +68,8 @@ bool trie_mark_deleted(trie* obj,line* l,unsigned int version){
         if(current_node.node_ptr==NULL) return false;
         current_word = line_fetch_word(l);
     }
-    current_node.node_ptr->version.deleted = version;
+    if(current_node.node_ptr->final)current_node.node_ptr->version.deleted = version;
+    //fprintf(stderr,"Node :%s ,marked as deleted\n",current_node.node_ptr->Word);
     return true;
 }
 
@@ -77,6 +78,8 @@ bool trie_delete(trie* obj,line* lm){
         fprintf(stderr,"Delete on static trie is not available");
         return false;
     }
+    //reset line
+    lm->n_gram_position=0;
     line_fetch_ngram(lm);
     char* current_word = line_fetch_word(lm);
     if(current_word==NULL){
@@ -125,11 +128,6 @@ bool trie_delete(trie* obj,line* lm){
 }
 
 void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
-    if(line_is_query(lm)!=true){
-        fprintf(stderr,"WRONG INPUT\n");
-        print_line(lm);
-        return;
-    }
     //line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
@@ -137,7 +135,6 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
     char* current_word;
 
     while((current_word=line_fetch_ngram(lm))!=NULL){
-        //char* current_word = line_fetch_word(lm);
         loc_res current_node;
         int words_found=0;
         //Search first word in hash table
@@ -150,12 +147,13 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
             current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
             if(current_node.node_ptr==NULL) break;
             words_found++;
-            //NEW CHANGE
             if(current_node.node_ptr->final){
                 //Version check
-                if(current_node.node_ptr->version.added > version) break;
-                if(current_node.node_ptr->version.deleted <= version) break;
-                if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
+                //if(current_node.node_ptr->version.added > version ||
+                //current_node.node_ptr->version.deleted <= version) break;
+                if(ngram_unique(detected_nodes,current_node.node_ptr)==true
+                &&(current_node.node_ptr->version.added <= version) 
+                &&(current_node.node_ptr->version.deleted > version)){
                     result_ngram_detected(rm,lm,words_found);
                 }
             }
@@ -169,10 +167,6 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
 }
 #if HYPER_NODE_OPT == 1
 void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
-    if(line_is_query(lm)!=true){
-        fprintf(stderr,"FALSE INPUT\n");
-        exit(-1);
-    }
     //line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);

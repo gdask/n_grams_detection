@@ -481,7 +481,7 @@ char* result_fetch_ngram(result* obj){
     //fprintf(stderr,"%d %d\n", obj->start_ngram, obj->first_available_slot);
     for(i=obj->start_ngram; i<obj->first_available_slot; i++){
         if(obj->output_buffer[i]=='\0'){
-            char*ngram=&obj->output_buffer[obj->start_ngram];
+            char* ngram= &obj->output_buffer[obj->start_ngram];
             obj->start_ngram=i+1;
             return ngram;
         }

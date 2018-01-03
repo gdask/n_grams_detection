@@ -14,7 +14,7 @@ typedef struct job{
     trie* arg1;
     line* arg2;
     result* arg3;
-    int version;
+    unsigned int version;
 }Job;
 void execute_job(Job* obj);
 
