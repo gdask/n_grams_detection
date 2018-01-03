@@ -7,7 +7,7 @@
 //In this part we use init_wordlen in order not to use malloc and free for each word, 
 //maybe later this side should be changed.
 typedef struct node{
-    char word[INIT_WORDLEN];
+    char* word;
     int freq;
 }node;
 
@@ -19,6 +19,7 @@ typedef struct bucket{
 }bucket;
 
 typedef struct Hash{
+    int max_freq;
     bucket* Bucket;
 }Hash;
 

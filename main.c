@@ -38,7 +38,7 @@ int main(int argc,char* argv[]){
     start = clock();
 
     //FIRST CREATE JOB SCHEDULER
-    int threads = 2;
+    int threads = 1;
     job_scheduler js;
     pthread_t *thread_ids=job_scheduler_init(&js,threads);
     //THEN CREATE TRIE
