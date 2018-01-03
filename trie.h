@@ -39,4 +39,7 @@ void trie_search_dynamic(trie* obj,line* l,result *r,unsigned int version);
 void trie_search_static (trie* obj,line* l,result* r,unsigned int version);
 //static search doesnt use version,but takes it as argument for abstraction purposes
 
+//debug print entrie struct
+void trie_print(trie* obj);
+
 #endif

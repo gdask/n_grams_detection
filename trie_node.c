@@ -143,37 +143,39 @@ bool tn_has_child(trie_node* obj){
 }
 
 #if HYPER_NODE_OPT == 1
-void tn_print_subtree(trie_node* obj){
+void tn_print_subtree(trie_node* obj,FILE* dump){
     if(tn_is_leaf(obj)==true){
-        fprintf(stderr,"Leaf node on %p ,Word= %s ,Final = %s \n\n",obj,obj->Word,btoa(obj->final));
+        fprintf(dump,"Leaf node on %p ,Word= %s ,Final = %s ",obj,obj->Word,btoa(obj->final));
+        fprintf(dump,"Added ver:%d Delete Ver:%d\n\n",obj->version.added,obj->version.deleted);
         return;
     }
     else if(tn_is_normal(obj)==true){
-        fprintf(stderr,"Normal node on %p ,Word= %s ,Final = %s \n",obj,obj->Word,btoa(obj->final));
+        fprintf(dump,"Normal node on %p ,Word= %s ,Final = %s ",obj,obj->Word,btoa(obj->final));
+        fprintf(dump,"Added ver:%d Delete Ver:%d\n",obj->version.added,obj->version.deleted);
     }
     else if(obj->mode=='s'){
-        fprintf(stderr,"Hyper node on %p Contains:",obj);
+        fprintf(dump,"Hyper node on %p Contains:",obj);
         hyper_node *tmp = (hyper_node*)obj;
         char* current_word = tmp->Word_Vector;
         int next_word;
         while(((hyper_node*)obj)->entries--){
-            next_word=fprintf(stderr," %s ",current_word);
+            next_word=fprintf(dump," %s ",current_word);
             //fprintf(stderr,"f:%s",current_word+next_word-1);
             current_word += next_word;
         }
-        fprintf(stderr,"\n");
+        fprintf(dump,"\n");
         return;
     }
     else{
-        fprintf(stderr,"tn_print_subtree called on an invalid object %p\n",obj);
+        fprintf(dump,"tn_print_subtree called on an invalid object %p\n",obj);
         exit(-1);
     }
-    fprintf(stderr,"Size of children_array = %d ,Children ptr = ",obj->next.Size);
+    fprintf(dump,"Size of children_array = %d ,Children ptr = ",obj->next.Size);
     int i;
-    for(i=0;i<obj->next.First_Available_Slot;i++) fprintf(stderr," %p ",&obj->next.Array[i]);
-    fprintf(stderr,"\n\n");
+    for(i=0;i<obj->next.First_Available_Slot;i++) fprintf(dump," %p ",&obj->next.Array[i]);
+    fprintf(dump,"\n\n");
 
-    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i]);
+    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i],dump);
 }
 #else
 void tn_print_subtree(trie_node* obj){

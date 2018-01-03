@@ -38,7 +38,7 @@ int main(int argc,char* argv[]){
     start = clock();
 
     //FIRST CREATE JOB SCHEDULER
-    int threads = 1;
+    int threads = 2;
     job_scheduler js;
     pthread_t *thread_ids=job_scheduler_init(&js,threads);
     //THEN CREATE TRIE
@@ -76,17 +76,16 @@ int main(int argc,char* argv[]){
             task.arg2 = current_line;
             task.arg3 = rm_get_result(&results);
             js_submit_job(&js,task);
-            //js_execute_jobs(&js);
             current_line = lm_fetch_independent_line(&queries);
         }
         else if(line_is_insert(current_line)){
-            trie_insert(&db,current_line,task.version);
             task.version++;
+            trie_insert(&db,current_line,task.version);
             current_line = lm_fetch_sequence_line(&queries);
         }
         else if(line_is_delete(current_line)){
-            trie_mark_deleted(&db,current_line,task.version);
             task.version++;
+            trie_mark_deleted(&db,current_line,task.version);
             current_line = lm_fetch_independent_line(&queries);
         }
         else if(line_is_F(current_line)){
@@ -106,7 +105,6 @@ int main(int argc,char* argv[]){
             }
             queries.first_available_slot=0;
             current_line = lm_fetch_sequence_line(&queries);
-            //break;
         }
     }
 

@@ -48,5 +48,5 @@ void update_round(hashtable* obj);
 /*George complete copy*/
 int hash_redistribute(hashtable* obj, char* word);
 
-void hash_print(hashtable* obj);
+void hash_print(hashtable* obj,FILE* dump);
 #endif

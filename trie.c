@@ -42,10 +42,8 @@ void trie_insert(trie* obj,line* lm,unsigned int version){
         current_node = tn_insert(current_node,obj->ca_init_size,current_word);
         current_word = line_fetch_word(lm);
     }
-    if(current_node->version.added==0){
-        current_node->version.added = version;
-        current_node->version.deleted = -1;
-    }
+    current_node->version.added = version;
+    current_node->version.deleted = -1;
     tn_set_final(current_node);
 }
 
@@ -147,13 +145,13 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
             current_node = ca_locate_bin(&current_node.node_ptr->next,current_word);
             if(current_node.node_ptr==NULL) break;
             words_found++;
-            if(current_node.node_ptr->final){
+            if(current_node.node_ptr->final
+            &&(current_node.node_ptr->version.added <= version) 
+            &&(current_node.node_ptr->version.deleted > version)){
                 //Version check
                 //if(current_node.node_ptr->version.added > version ||
                 //current_node.node_ptr->version.deleted <= version) break;
-                if(ngram_unique(detected_nodes,current_node.node_ptr)==true
-                &&(current_node.node_ptr->version.added <= version) 
-                &&(current_node.node_ptr->version.deleted > version)){
+                if(ngram_unique(detected_nodes,current_node.node_ptr)==true){
                     result_ngram_detected(rm,lm,words_found);
                 }
             }
@@ -162,6 +160,7 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
             while(*current_word=='\0' && current_word< eof) current_word++;
         }
     }
+    //fprintf(stderr,"Search in version:%d\n",version);
     result_completed(rm);
     return;
 }
@@ -331,4 +330,10 @@ void trie_compress(trie* obj){
         ca_compress(&obj->zero_level.ca_bucket[i],0);
     }
     obj->trie_search = &trie_search_static;
+}
+
+void trie_print(trie* obj){
+    FILE* fp=fopen("trie_dump","w");
+    hash_print(&obj->zero_level,fp);
+    fclose(fp);
 }

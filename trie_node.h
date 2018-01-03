@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define HYPER_NODE_OPT 1
 #define INIT_SIZE 2
@@ -77,7 +78,7 @@ void tn_normal_to_leaf(trie_node* obj);
 bool tn_is_leaf(trie_node* obj);
 bool tn_is_normal(trie_node* obj);
 //Debug purpose printing function
-void tn_print_subtree(trie_node* obj);
+void tn_print_subtree(trie_node* obj,FILE* dump);
 
 #if HYPER_NODE_OPT == 1
 struct hyper_node{

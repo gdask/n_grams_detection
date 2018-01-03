@@ -222,15 +222,15 @@ loc_res hashtable_search(hashtable* obj, char* word, int* bucket){
 }
 
 
-void hash_print(hashtable* obj){
-    fprintf(stderr,"Hashtable on %p has %d buckets:\n",obj,obj->size);
+void hash_print(hashtable* obj,FILE* dump){
+    fprintf(dump,"Hashtable on %p has %d buckets:\n",obj,obj->size);
     int i;
     for(i=0;i<obj->size;i++){
-        fprintf(stderr,"Bucket on %d: has %d entries\n",i,obj->ca_bucket[i].First_Available_Slot);
+        fprintf(dump,"Bucket on %d: has %d entries\n",i,obj->ca_bucket[i].First_Available_Slot);
         int j;
         for(j=0;j<obj->ca_bucket[i].First_Available_Slot;j++){
             //fprintf(stderr, "%s|", obj->ca_bucket[i].Array[j].Word);
-            tn_print_subtree(&obj->ca_bucket[i].Array[j]);
+            tn_print_subtree(&obj->ca_bucket[i].Array[j],dump);
         }
         //fprintf(stderr, "\n");
     }
