@@ -6,6 +6,7 @@
 #include "trie.h"
 #include "./job_scheduler/jobscheduler.h"
 #include <pthread.h>
+#include "control_panel.h"
 
 int main(int argc,char* argv[]){
     //Argument checking
@@ -38,12 +39,12 @@ int main(int argc,char* argv[]){
     start = clock();
 
     //FIRST CREATE JOB SCHEDULER
-    int threads = 2;
+    int threads = THREADS;
     job_scheduler js;
     pthread_t *thread_ids=job_scheduler_init(&js,threads);
     //THEN CREATE TRIE
     trie db;
-    trie_init(&db,threads,thread_ids,4);
+    trie_init(&db,threads,thread_ids,INIT_SIZE);
 
     //Init trie from init file
     line_manager lm_init;
@@ -57,7 +58,7 @@ int main(int argc,char* argv[]){
     char trie_status = lm_get_file_status(&lm_init);
     //compress trie if needed
     if(trie_status=='S')trie_compress(&db);
-    if(trie_status=='S')fprintf(stderr,"Static\n");
+    //if(trie_status=='S')fprintf(stderr,"Static\n");
     line_manager_fin(&lm_init);
     fclose(init_file);
     //return 0;
@@ -99,7 +100,6 @@ int main(int argc,char* argv[]){
             int i;
             for(i=0;i<queries.first_available_slot;i++){
                 if(line_is_delete(queries.line[i])){
-                    //fprintf(stderr,"Line number is %d\n",i);
                     trie_delete(&db,queries.line[i]);
                 }
             }
@@ -115,7 +115,7 @@ int main(int argc,char* argv[]){
     job_scheduler_fin(&js);
 
     end=clock();
-    fprintf(stderr,"Elapsed time:%f\n",((float)end-start)/CLOCKS_PER_SEC);
+    fprintf(stderr,"%s Elapsed time:%f\n",argv[4],((float)end-start)/CLOCKS_PER_SEC);
 
     return 0;
 }

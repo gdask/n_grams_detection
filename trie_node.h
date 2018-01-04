@@ -1,12 +1,11 @@
 #ifndef TRIE_NODE_H
 #define	TRIE_NODE_H
 
+#include "control_panel.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#define HYPER_NODE_OPT 1
-#define INIT_SIZE 2
 #define HYPER_VECTOR_INIT 32
 #define HYPER_DATA_INIT 8
 #define DEBUG 0

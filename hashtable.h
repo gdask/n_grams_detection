@@ -2,11 +2,8 @@
 #define HASHTABLE_H
 #define KEYS 500
 
+#include "control_panel.h"
 #include "trie_node.h"
-
-#define HASH_BUCKETS_INIT 8
-#define HASH_MASK 0x07
-#define OV_HASH_MASK 0x0F
 
 typedef struct hashtable{
     children_arr* ca_bucket;
