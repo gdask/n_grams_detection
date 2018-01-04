@@ -178,7 +178,7 @@ void tn_print_subtree(trie_node* obj,FILE* dump){
     for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i],dump);
 }
 #else
-void tn_print_subtree(trie_node* obj){
+void tn_print_subtree(trie_node* obj,FILE* dump){
     if(tn_is_leaf(obj)==true){
         fprintf(stderr,"Leaf node on %p ,Word= %s ,Final = %s \n\n",obj,obj->Word,btoa(obj->final));
         return;
@@ -212,7 +212,7 @@ void tn_print_subtree(trie_node* obj){
     for(i=0;i<obj->next.First_Available_Slot;i++) fprintf(stderr," %p ",&obj->next.Array[i]);
     fprintf(stderr,"\n\n");
 
-    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i]);
+    for(i=0;i<obj->next.First_Available_Slot;i++) tn_print_subtree(&obj->next.Array[i],dump);
 }
 #endif
 
@@ -486,8 +486,8 @@ bool hyper_node_insert(hyper_node* obj,trie_node* input){
             obj->vector_size *=2;
             available_space = obj->vector_size-First_Available_Slot;
         }
-        if(entries == obj->info_size-2){
-            obj->Word_Info = realloc(obj->Word_Info,obj->info_size*2);
+        if(entries >= obj->info_size-2){
+            obj->Word_Info = realloc(obj->Word_Info,obj->info_size*2*sizeof(short));
             if(obj->Word_Info==NULL){
                 fprintf(stderr,"hyper insert realloc failed\n");
                 exit(-1);

@@ -237,7 +237,6 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
         exit(-1);
     }
     //line_parse(lm);
-    clock_t start = clock();
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];

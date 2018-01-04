@@ -4,7 +4,7 @@
 /*Control Panel contains all important defined sizes that could be changed in program*/
 
 //MAIN
-#define THREADS 1
+#define THREADS 2
 #define INIT_SIZE 4 //CHILDREN ARRAY INIT SIZE,HAS IMPACT ON HASHTABLE TOO
 
 //TRIE NODE
@@ -22,7 +22,7 @@
 
 //FILTER MANAGER
 #define WHICH_FILTER 0 // 2 for bloom, 1 for pointer set, 0 for hash pointer set (best option)
-#define FILTER_INIT_SIZE 500 //Expected n_grams/query
+#define FILTER_INIT_SIZE 500 //Expected n_grams per query
 
 
 
