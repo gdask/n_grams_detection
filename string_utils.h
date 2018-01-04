@@ -1,9 +1,8 @@
 #ifndef STRING_UTILS_H
 #define	STRING_UTILS_H
 
-#define INIT_SIZE_BUF 512
-#define NUMBER_OF_LINES 28
-#define  TOPK_MUTEX 0
+
+#include "control_panel.h"
 #include <stdbool.h>
 #include <stdio.h>
 

@@ -6,10 +6,7 @@
 #include "bloom_filter.h"
 #include "pointer_set.h"
 #include "hash_pointer_set.h"
-
-
-#define WHICH_FILTER 0 // 2 for bloom, 1 for pointer set, 0 for hash pointer set 
-#define FILTER_INIT_SIZE 500
+#include "../control_panel.h"
 
 #if WHICH_FILTER==2
 typedef filter abstract_filter;
