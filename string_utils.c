@@ -580,15 +580,7 @@ void rm_display_result(result_manager* obj){
     int i;
     for(i=0; i<obj->first_available_slot; i++){
         //Format result as needed
-        int j;
-        for(j=0; j<obj->result[i]->first_available_slot-1; j++){
-            if(obj->result[i]->output_buffer[j]=='\0'){
-                obj->result[i]->output_buffer[j]='|';
-            }
-        }
-        if(obj->result[i]->first_available_slot!=0)
-            obj->result[i]->output_buffer[obj->result[i]->first_available_slot]='\0';
-        obj->result[i]->first_available_slot=0;
+        result_format(obj->result[i]);
         fprintf(obj->output,"%s\n",obj->result[i]->output_buffer);
         //obj->result[i]->k=false;
     }
@@ -599,4 +591,26 @@ void rm_display_result(result_manager* obj){
     Hash_reuse(obj->topk.Hash);
     obj->first_available_slot=0;
     obj->k=-1;  // i should initialize each time k value
+}
+
+void result_format(result* obj){
+    int j;
+    for(j=0; j<obj->first_available_slot-1; j++){
+            if(obj->output_buffer[j]=='\0'){
+                obj->output_buffer[j]='|';
+            }
+        }
+        if(obj->first_available_slot!=0){
+            if(obj->output_bufsize==obj->first_available_slot){
+                char* temp =(char*) realloc(obj->output_buffer, 2*obj->output_bufsize*sizeof(char));
+                if(temp==NULL){
+                    fprintf(stderr,"Realloc Failed :: rm_ngram_detected\n");
+                    exit(-1);
+                }
+                obj->output_buffer=temp;
+                obj->output_bufsize= 2*obj->output_bufsize;
+            }
+            obj->output_buffer[obj->first_available_slot]='\0';
+        }
+        obj->first_available_slot=0;
 }

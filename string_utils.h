@@ -103,6 +103,8 @@ void result_ngram_detected(result* obj, line *l, int word_count);
 void result_completed(result* obj);
 //returns ngram in order to insert it in topk
 char* result_fetch_ngram(result* obj);
+//Format result as it is wanted
+void result_format(result* obj);
 
 //Result Manager 
 void rm_init(result_manager* obj, FILE *fp);
