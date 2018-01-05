@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define BUCKET_SIZE 9
-#define HASH_SIZE 99
+//#define HASH_SIZE 99
 #define ARRAY_NODE_SIZE 5
 #include "../filters/murmur3.h"
 

@@ -10,6 +10,9 @@
 #include "control_panel.h"
 
 int main(int argc,char* argv[]){
+    struct timespec start,finish;
+    double elapsed;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     //Argument checking
     if(argc!=5){
         fprintf(stderr,"Essential arguments -i 'init filename' -q 'query filename'\n");
@@ -36,8 +39,6 @@ int main(int argc,char* argv[]){
         perror("Query File: ");
         exit(-1);
     }
-    clock_t start,end;
-    start = clock();
 
     #if ALT_SCHEDULER == 0
     pthread_t* (*scheduler_init)(job_scheduler*,int) = &job_scheduler_init;
@@ -124,8 +125,10 @@ int main(int argc,char* argv[]){
     trie_fin(&db);
     scheduler_fin(&js);
 
-    end=clock();
-    fprintf(stderr,"%s Elapsed time:%f\n",argv[4],((float)end-start)/CLOCKS_PER_SEC);
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    elapsed = (finish.tv_sec - start.tv_sec);
+    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+    fprintf(stderr,"%s Elapsed time: %f\n",argv[4],elapsed);
 
     return 0;
 }

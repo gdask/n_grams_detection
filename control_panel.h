@@ -5,7 +5,7 @@
 
 //MAIN
 #define THREADS 1
-#define ALT_SCHEDULER 1 // 1 for alternative scheduler, 0 for regular
+#define ALT_SCHEDULER 0 // 1 for alternative scheduler, 0 for regular
 #define INIT_SIZE 1 //CHILDREN ARRAY INIT SIZE,HAS IMPACT ON HASHTABLE TOO
 
 //TRIE NODE
@@ -23,6 +23,6 @@
 #define FILTER_INIT_SIZE 500 //Expected n_grams per query
 
 //TOPK HASH
-#define HASH_SIZE 99
+#define HASH_SIZE 200
 
 #endif
