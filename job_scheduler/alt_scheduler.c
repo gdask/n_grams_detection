@@ -106,23 +106,17 @@ void * alt_worker(void* input){
         fprintf(stderr,"Worker:%d not in tids",(int)id);
         exit(-1);
     }
-    pthread_mutex_lock(&obj->mtx);
-    obj->inactive_workers++;
-    pthread_mutex_unlock(&obj->mtx);
-    pthread_cond_signal(&obj->job_done);
     bool keep_running;
     while(1){
         pthread_mutex_lock(&obj->mtx);
+        obj->inactive_workers++;
+        pthread_cond_signal(&obj->job_done);
         pthread_cond_wait(&obj->job_pending,&obj->mtx);
         keep_running = obj->run;
         pthread_mutex_unlock(&obj->mtx);
         if(keep_running==false) pthread_exit(0);
         //process data
-        for(i=0;i<obj->num_of_jobs[index];i++) execute_job(&obj->tasks[index][i]);
-        //work is done
-        pthread_mutex_lock(&obj->mtx);
-        obj->inactive_workers++;
-        pthread_mutex_unlock(&obj->mtx);
-        pthread_cond_signal(&obj->job_done);
+        for(i=0;i<obj->num_of_jobs[index];i++) //execute_job(&obj->tasks[index][i]);
+            fprintf(stdout,"Job:%d\n",(int)id);
     }
 }

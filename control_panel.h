@@ -4,9 +4,9 @@
 /*Control Panel contains all important defined sizes that could be changed in program*/
 
 //MAIN
-#define THREADS 1
-#define ALT_SCHEDULER 0 // 1 for alternative scheduler, 0 for regular
-#define INIT_SIZE 4 //CHILDREN ARRAY INIT SIZE,HAS IMPACT ON HASHTABLE TOO
+#define THREADS 2
+#define ALT_SCHEDULER 1 // 1 for alternative scheduler, 0 for regular
+#define INIT_SIZE 1 //CHILDREN ARRAY INIT SIZE,HAS IMPACT ON HASHTABLE TOO
 
 //TRIE NODE
 #define HYPER_NODE_OPT 1 //OPTIMIZED STATIC 1 , STANDART 0

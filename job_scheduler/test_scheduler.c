@@ -31,7 +31,7 @@ int main(){
     alt_scheduler_init(&ajs,4);
     fprintf(stderr,"Success\n");
     int i;
-    for(i=0;i<5;i++)alt_submit_job(&ajs,task);
+    for(i=0;i<15;i++)alt_submit_job(&ajs,task);
     alt_execute_jobs(&ajs);
     alt_scheduler_fin(&ajs);
 
