@@ -1,6 +1,7 @@
 #ifndef STRING_UTILS_H
 #define	STRING_UTILS_H
 
+#define TOPK_MUTEX 0
 
 #include "control_panel.h"
 #include <stdbool.h>

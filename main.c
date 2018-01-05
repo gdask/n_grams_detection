@@ -5,6 +5,7 @@
 #include "string_utils.h"
 #include "trie.h"
 #include "./job_scheduler/jobscheduler.h"
+#include "./job_scheduler/alt_scheduler.h"
 #include <pthread.h>
 #include "control_panel.h"
 
@@ -38,10 +39,22 @@ int main(int argc,char* argv[]){
     clock_t start,end;
     start = clock();
 
+    #if ALT_SCHEDULER == 0
+    pthread_t* (*scheduler_init)(job_scheduler*,int) = &job_scheduler_init;
+    void (*scheduler_fin)(job_scheduler*) = &job_scheduler_fin;
+    void (*submit_job)(job_scheduler*,Job) = &js_submit_job;
+    void (*execute_jobs)(job_scheduler*) = &js_execute_jobs;
+    job_scheduler js;
+    #else
+    pthread_t* (*scheduler_init)(alt_scheduler*,int) = &alt_scheduler_init;
+    void (*scheduler_fin)(alt_scheduler*) = &alt_scheduler_fin;
+    void (*submit_job)(alt_scheduler*,Job)= &alt_submit_job;
+    void (*execute_jobs)(alt_scheduler*) = &alt_execute_jobs;
+    alt_scheduler js;
+    #endif
     //FIRST CREATE JOB SCHEDULER
     int threads = THREADS;
-    job_scheduler js;
-    pthread_t *thread_ids=job_scheduler_init(&js,threads);
+    pthread_t *thread_ids=scheduler_init(&js,threads);
     //THEN CREATE TRIE
     trie db;
     trie_init(&db,threads,thread_ids,INIT_SIZE);
@@ -58,10 +71,8 @@ int main(int argc,char* argv[]){
     char trie_status = lm_get_file_status(&lm_init);
     //compress trie if needed
     if(trie_status=='S')trie_compress(&db);
-    //if(trie_status=='S')fprintf(stderr,"Static\n");
     line_manager_fin(&lm_init);
     fclose(init_file);
-    //return 0;
 
     //Execute batches
     line_manager queries;
@@ -76,7 +87,7 @@ int main(int argc,char* argv[]){
         if(line_is_query(current_line)){
             task.arg2 = current_line;
             task.arg3 = rm_get_result(&results);
-            js_submit_job(&js,task);
+            submit_job(&js,task);
             current_line = lm_fetch_independent_line(&queries);
         }
         else if(line_is_insert(current_line)){
@@ -92,7 +103,7 @@ int main(int argc,char* argv[]){
         else if(line_is_F(current_line)){
             rm_use_topk(&results,current_line->k);
             //fprintf(stdout, "F\n");
-            js_execute_jobs(&js);
+            execute_jobs(&js);
             rm_display_result(&results);
             //now we have to make actual deletions in trie
             //make sure that every resource is ready for the next batch
@@ -112,7 +123,7 @@ int main(int argc,char* argv[]){
     rm_fin(&results);
     fclose(query_file);
     trie_fin(&db);
-    job_scheduler_fin(&js);
+    scheduler_fin(&js);
 
     end=clock();
     fprintf(stderr,"%s Elapsed time:%f\n",argv[4],((float)end-start)/CLOCKS_PER_SEC);

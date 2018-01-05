@@ -32,7 +32,6 @@ void job_scheduler_fin(job_scheduler* obj){
     int i;
     for(i=0;i<obj->threads;i++) pthread_join(obj->tids[i],NULL);
     pthread_mutex_destroy(&obj->mtx);
-    //pthread_mutex_destroy(&obj->out_mtx);
     pthread_cond_destroy(&obj->job_pending);
     pthread_cond_destroy(&obj->job_done);
     free(obj->tids);

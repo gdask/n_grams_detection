@@ -1,9 +1,8 @@
 //static and simple hashtable, only buckets overflow
 #ifndef TOPK_HASH_H
 #define TOPK_HASH_H
-#define HASH_SIZE 99
-#define INIT_WORDLEN 128
-#define TOPK_MUTEX 0
+
+#include "../control_panel.h"
 
 //In this part we use init_wordlen in order not to use malloc and free for each word, 
 //maybe later this side should be changed.

@@ -298,9 +298,9 @@ line* lm_fetch_sequence_line(line_manager* obj){
         retval=Qline_fetch(obj->line[pos], obj->input);
         if(obj->first_available_slot==0) obj->first_available_slot++;
         if(retval==0){
-            //if(line_is_query(obj->line[pos])!=true){
+            if(line_is_query(obj->line[pos])!=true){
                 line_parse(obj->line[pos]);
-            //}
+            }
             return obj->line[pos];
         }
         else return 0;
@@ -318,7 +318,6 @@ line* lm_fetch_sequence_line(line_manager* obj){
             retval=Iline_fetch(obj->line[pos], obj->input);
         }
         if(retval==0){
-            //obj->first_available_slot++;
             line_parse(obj->line[pos]);
             return obj->line[pos];
         }
@@ -355,9 +354,9 @@ line* lm_fetch_independent_line(line_manager* obj){
         retval=Qline_fetch(obj->line[pos], obj->input);
         if(retval==0){
             obj->first_available_slot++;
-            //if(line_is_query(obj->line[pos])!=true){
+            if(line_is_query(obj->line[pos])!=true){
                 line_parse(obj->line[pos]);
-            //}
+            }
             return obj->line[pos];
         }
         else return 0;

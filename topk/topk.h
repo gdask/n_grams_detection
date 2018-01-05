@@ -1,14 +1,15 @@
 #ifndef TOP_K_H
 #define	TOP_K_H
+#define INIT_SIZE_HEAP 4
 #define INIT_SIZE_QUEUE 512
 #define INIT_SIZE_NGRAM 128
 #define LCHILD(x) 2 * x + 1 // left child
 #define RCHILD(x) 2 * x + 2 // right child
 #define PARENT(x) (x - 1) / 2 // parent
 
-#define INIT_SIZE_HEAP 4
 #include <stdbool.h>
 #include <stdio.h>
+#include "../control_panel.h"
 
 typedef struct na_node{
     int rank;

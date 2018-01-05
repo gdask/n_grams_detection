@@ -126,7 +126,7 @@ bool trie_delete(trie* obj,line* lm){
 }
 
 void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
-    //line_parse(lm);
+    line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -166,7 +166,7 @@ void trie_search_dynamic(trie* obj,line* lm,result *rm,unsigned int version){
 }
 #if HYPER_NODE_OPT == 1
 void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
-    //line_parse(lm);
+    line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];
@@ -236,7 +236,7 @@ void trie_search_static (trie* obj,line* lm,result* rm,unsigned int version){
         fprintf(stderr,"FALSE INPUT\n");
         exit(-1);
     }
-    //line_parse(lm);
+    line_parse(lm);
     bool (*ngram_unique)(void* obj,void* input);
     abstract_filter* detected_nodes = get_filter(&obj->fm,(void**)&ngram_unique);
     char* eof = &lm->buffer[lm->line_end];

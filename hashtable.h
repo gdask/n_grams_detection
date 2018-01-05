@@ -5,6 +5,9 @@
 #include "control_panel.h"
 #include "trie_node.h"
 
+#define HASH_MASK HASH_BUCKETS_INIT-1
+#define OV_HASH_MASK (2*HASH_BUCKETS_INIT) -1
+
 typedef struct hashtable{
     children_arr* ca_bucket;
     int round;
