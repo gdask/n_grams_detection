@@ -53,11 +53,10 @@ int main(int argc,char* argv[]){
     alt_scheduler js;
     #endif
     //FIRST CREATE JOB SCHEDULER
-    int threads = THREADS;
-    pthread_t *thread_ids=scheduler_init(&js,threads);
+    pthread_t *thread_ids=scheduler_init(&js,THREADS);
     //THEN CREATE TRIE
     trie db;
-    trie_init(&db,threads,thread_ids,INIT_SIZE);
+    trie_init(&db,THREADS,thread_ids,INIT_SIZE);
 
     //Init trie from init file
     line_manager lm_init;

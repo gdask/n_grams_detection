@@ -36,11 +36,11 @@ pthread_t* alt_scheduler_init(alt_scheduler* obj,int num_of_threads){
     pthread_cond_init(&obj->job_pending,NULL);
     pthread_cond_init(&obj->job_done,NULL);
     for(i=0;i<obj->threads;i++) pthread_create(&obj->tids[i],0,alt_worker,obj);
-    pthread_mutex_lock(&obj->mtx);
+    /*pthread_mutex_lock(&obj->mtx);
     while(obj->inactive_workers != obj->threads){
         pthread_cond_wait(&obj->job_done,&obj->mtx);
     }
-    pthread_mutex_unlock(&obj->mtx);
+    pthread_mutex_unlock(&obj->mtx);*/
     return obj->tids;
 }
 
@@ -116,7 +116,6 @@ void * alt_worker(void* input){
         pthread_mutex_unlock(&obj->mtx);
         if(keep_running==false) pthread_exit(0);
         //process data
-        for(i=0;i<obj->num_of_jobs[index];i++) //execute_job(&obj->tasks[index][i]);
-            fprintf(stdout,"Job:%d\n",(int)id);
+        for(i=0;i<obj->num_of_jobs[index];i++) execute_job(&obj->tasks[index][i]);
     }
 }
